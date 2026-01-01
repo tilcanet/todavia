@@ -22,6 +22,10 @@ margin-bottom: 30px; }
 .ticket-card:hover { transform: scale(1.02); }
 .bg-gradient-danger { background: linear-gradient(135deg, #FF6B6B 0%, #EE5A6F 100%); }
 
+.sugerencia-card { border-left: 4px solid #009688; background: white; border-radius: 15px; transition: transform 0.2s;
+box-shadow: 0 2px 10px rgba(0,0,0,0.01); }
+.sugerencia-card:hover { transform: translateX(5px); }
+
 @keyframes pulso-rojo {
 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 82, 82, 0.7); }
 70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(255, 82, 82, 0); }
@@ -150,11 +154,14 @@ margin-bottom: 30px; }
                     <div class="card ticket-card bg-gradient-danger p-4 shadow-sm">
                         <div class="d-flex justify-content-between align-items-start mb-3">
                             <h5 class="fw-800 mb-0 text-white">{{ ticket.tipo }}</h5>
-                            <span class="badge bg-white text-danger rounded-pill fw-bold">{{ ticket.fecha|date:"H:i"
-                                }}</span>
+                            <!-- Aquí corregimos la sintaxis de la fecha y mostramos hora -->
+                            <span class="badge bg-white text-danger rounded-pill fw-bold">
+                                {{ ticket.fecha|date:"H:i" }} Hs
+                            </span>
                         </div>
-                        <p class="mb-4 opacity-90"><strong>{{ ticket.usuario.alias }}</strong> solicita asistencia
-                            inmediata en su ubicacion.</p>
+                        <p class="mb-4 opacity-90">
+                            <strong>{{ ticket.usuario.alias }}</strong> solicita asistencia inmediata en su ubicacion.
+                        </p>
                         <button class="btn btn-light w-100 fw-bold rounded-3 btn-ver-en-mapa"
                             data-lat="{{ ticket.latitud }}" data-lng="{{ ticket.longitud }}"
                             data-titulo="Emergencia {{ ticket.tipo }}: {{ ticket.usuario.alias }}">
@@ -166,6 +173,39 @@ margin-bottom: 30px; }
                 <div class="col-12">
                     <div class="card border-0 bg-light p-5 text-center rounded-4">
                         <p class="text-muted fw-bold mb-0">No hay alertas activas en este periodo.</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Suggestions / Feedback Section (NUEVO) -->
+        <div class="mb-5">
+            <h4 class="fw-bold mb-4 d-flex align-items-center gap-2">
+                <i class="bi bi-lightbulb-fill text-teal"></i> Propuestas y Feedback
+            </h4>
+            <div class="row g-3">
+                {% for sug in sugerencias %}
+                <div class="col-lg-6">
+                    <div class="card sugerencia-card p-3 h-100">
+                        <div class="d-flex gap-3">
+                            <div class="flex-shrink-0">
+                                <div class="bg-light rounded-circle p-2 text-teal">
+                                    <i class="bi bi-chat-left-quote-fill"></i>
+                                </div>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold mb-1">{{ sug.usuario.alias }}</h6>
+                                <p class="text-muted small mb-2">{{ sug.fecha|date:"d/m/Y H:i" }}</p>
+                                <p class="mb-0 fst-italic">"{{ sug.texto }}"</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12">
+                    <div class="card border-0 bg-light p-5 text-center rounded-4">
+                        <p class="text-muted fw-bold mb-0">No hay propuestas registradas.</p>
                     </div>
                 </div>
                 {% endfor %}

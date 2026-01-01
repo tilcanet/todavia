@@ -467,6 +467,9 @@ def dashboard_view(request):
     # Usuarios en Zona Roja ACTIVOS
     usuarios_zona_roja = UsuarioAnonimo.objects.filter(en_zona_roja=True).order_by('-fecha_zona_roja')
 
+    # Sugerencias / Feedback
+    sugerencias = Sugerencia.objects.filter(**filtro_kwargs).order_by('-fecha')
+
     # 3. Datos para el mapa (Usando RegistroUbicacion para historial)
     from .models import RegistroUbicacion
     if fecha_param:
@@ -524,6 +527,7 @@ def dashboard_view(request):
             "alertas": alertas_riesgo,
             "zona_roja_activos": usuarios_zona_roja.count()
         },
+        "sugerencias": sugerencias,
         "puntos_gps": json.dumps(datos_mapa),
         "usuarios_zona_roja": usuarios_zona_roja[:5], # Pasamos los primeros 5 para mostrar lista si se quiere
         "sentimientos_json": json.dumps(sentimientos),
