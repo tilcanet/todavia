@@ -400,60 +400,46 @@ def dashboard_view(request):
     # 1. Definir Periodo de Filtrado
     periodo = request.GET.get('periodo', 'siempre') 
     fecha_param = request.GET.get('fecha')
-    ahora = timezone.now()
     
+    # Determinar la Fecha de Referencia (Fin del intervalo)
+    ahora = timezone.now()
+    hoy_local = timezone.localtime(ahora).date()
+    
+    if fecha_param:
+        try:
+            fecha_ref = timezone.datetime.strptime(fecha_param, '%Y-%m-%d').date()
+        except ValueError:
+            fecha_ref = hoy_local
+    else:
+        fecha_ref = hoy_local
+
+    # Determinar Fecha de Inicio según el periodo
+    fecha_inicio = None
+    
+    if periodo == 'hoy':
+        fecha_inicio = fecha_ref
+    elif periodo == 'semana':
+        fecha_inicio = fecha_ref - timedelta(days=7)
+    elif periodo == 'mes':
+        fecha_inicio = fecha_ref - timedelta(days=30)
+    else: # 'siempre'
+        fecha_inicio = None # Sin limite inferior
+
+    # Construir kwargs de filtro
     filtro_kwargs = {}
     filtro_registro_kwargs = {}
+    filtro_ubicacion_kwargs = {}
 
-    if fecha_param:
-        # MODO HISTÓRICO (Día específico)
-        try:
-            fecha_obj = timezone.datetime.strptime(fecha_param, '%Y-%m-%d').date()
-            # Filtramos todo lo que ocurra en ese día
-            filtro_kwargs = {
-                "fecha__year": fecha_obj.year, 
-                "fecha__month": fecha_obj.month, 
-                "fecha__day": fecha_obj.day
-            }
-            # Para modelos con field 'fecha_registro' (UsuarioAnonimo)
-            filtro_registro_kwargs = {
-                "fecha_registro__year": fecha_obj.year,
-                "fecha_registro__month": fecha_obj.month,
-                "fecha_registro__day": fecha_obj.day
-            }
-            periodo = fecha_param # Para que la UI sepa que estamos en modo fecha
-        except ValueError:
-            # Si falla la fecha, volvemos a hoy
-            fecha_inicio = ahora.replace(hour=0, minute=0, second=0, microsecond=0)
-            filtro_kwargs = {"fecha__gte": fecha_inicio}
-            filtro_registro_kwargs = {"fecha_registro__gte": fecha_inicio}
-            periodo = 'hoy'
-            fecha_param = None
-
+    if fecha_inicio:
+        # Rango inclusivo [Inicio, Fin]
+        filtro_kwargs = {"fecha__date__range": [fecha_inicio, fecha_ref]}
+        filtro_registro_kwargs = {"fecha_registro__date__range": [fecha_inicio, fecha_ref]}
+        filtro_ubicacion_kwargs = {"fecha__date__range": [fecha_inicio, fecha_ref]}
     else:
-        # MODO PERIODO RELATIVO
-        hoy_local = timezone.localtime(ahora).date()
-        if periodo == 'hoy':
-            fecha_inicio = ahora.replace(hour=0, minute=0, second=0, microsecond=0)
-            filtro_kwargs = {"fecha__date": hoy_local}
-            filtro_registro_kwargs = {"fecha_registro__date": hoy_local}
-            filtro_ubicacion_kwargs = {"fecha__date": hoy_local}
-        elif periodo == 'semana':
-            fecha_inicio = ahora - timedelta(days=7)
-            filtro_kwargs = {"fecha__gte": fecha_inicio}
-            filtro_registro_kwargs = {"fecha_registro__gte": fecha_inicio}
-            filtro_ubicacion_kwargs = {"fecha__gte": fecha_inicio.date()}
-        elif periodo == 'mes':
-            fecha_inicio = ahora - timedelta(days=30)
-            filtro_kwargs = {"fecha__gte": fecha_inicio}
-            filtro_registro_kwargs = {"fecha_registro__gte": fecha_inicio}
-            filtro_ubicacion_kwargs = {"fecha__gte": fecha_inicio.date()}
-        else: # 'siempre'
-            periodo = 'siempre'
-            fecha_inicio = ahora - timedelta(days=365*20)
-            filtro_kwargs = {}
-            filtro_registro_kwargs = {}
-            filtro_ubicacion_kwargs = {}
+        # Solo limite superior (hasta fecha_ref incluidos)
+        filtro_kwargs = {"fecha__date__lte": fecha_ref}
+        filtro_registro_kwargs = {"fecha_registro__date__lte": fecha_ref}
+        filtro_ubicacion_kwargs = {"fecha__date__lte": fecha_ref}
 
     # 2. KPIs Filtrados
     total_usuarios = UsuarioAnonimo.objects.filter(**filtro_registro_kwargs).count()
@@ -467,18 +453,11 @@ def dashboard_view(request):
     # Usuarios en Zona Roja ACTIVOS
     usuarios_zona_roja = UsuarioAnonimo.objects.filter(en_zona_roja=True).order_by('-fecha_zona_roja')
 
-    # Sugerencias / Feedback
-    sugerencias = Sugerencia.objects.filter(**filtro_kwargs).order_by('-fecha')
-
     # 3. Datos para el mapa (Usando RegistroUbicacion para historial)
     from .models import RegistroUbicacion
-    if fecha_param:
-        puntos_gps = list(RegistroUbicacion.objects.filter(fecha__date=fecha_obj)
-                          .values('usuario__alias', 'latitud', 'longitud', 'fecha', 'usuario__en_zona_roja'))
-    else:
-        print(f"DEBUG: filtro_ubicacion_kwargs = {filtro_ubicacion_kwargs}")
-        puntos_gps = list(RegistroUbicacion.objects.filter(**filtro_ubicacion_kwargs)
-                          .values('usuario__alias', 'latitud', 'longitud', 'fecha', 'usuario__en_zona_roja'))
+    print(f"DEBUG: filtro_ubicacion_kwargs = {filtro_ubicacion_kwargs}")
+    puntos_gps = list(RegistroUbicacion.objects.filter(**filtro_ubicacion_kwargs)
+                        .values('usuario__alias', 'latitud', 'longitud', 'fecha', 'usuario__en_zona_roja'))
     
     print(f"DEBUG: Encontrados {len(puntos_gps)} puntos GPS")
     
