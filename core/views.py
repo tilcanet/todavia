@@ -473,8 +473,11 @@ def dashboard_view(request):
         puntos_gps = list(RegistroUbicacion.objects.filter(fecha__date=fecha_obj)
                           .values('usuario__alias', 'latitud', 'longitud', 'fecha', 'usuario__en_zona_roja'))
     else:
+        print(f"DEBUG: filtro_ubicacion_kwargs = {filtro_ubicacion_kwargs}")
         puntos_gps = list(RegistroUbicacion.objects.filter(**filtro_ubicacion_kwargs)
                           .values('usuario__alias', 'latitud', 'longitud', 'fecha', 'usuario__en_zona_roja'))
+    
+    print(f"DEBUG: Encontrados {len(puntos_gps)} puntos GPS")
     
     # Adaptar nombres para el JS del mapa y agregar intensidad para heatmap
     datos_mapa = []
