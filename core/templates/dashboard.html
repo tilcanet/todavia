@@ -4,8 +4,8 @@
 
 {% block extra_css %}
 .dashboard-wrapper { padding: 30px 0; }
-#map { height: 500px !important; min-height: 500px !important; width: 100%; border-radius: 20px; box-shadow: 0 10px 30px
-rgba(0,0,0,0.05); border: 1px solid #edf2f7; z-index: 1; background: #f8fafc; display: block; }
+#map { width: 100%; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); border: 1px solid #edf2f7; z-index:
+1; background: #f8fafc; display: block; }
 
 .kpi-card { border: none; border-radius: 20px; transition: transform 0.3s; background: white; box-shadow: 0 4px 15px
 rgba(0,0,0,0.02); }
@@ -114,7 +114,7 @@ margin-bottom: 30px; }
         <div class="row g-4 mb-5">
             <div class="col-xl-8">
                 <div class="card border-0 shadow-sm rounded-4 p-3 bg-white">
-                    <div id="map"></div>
+                    <div id="map" style="height: 500px; width: 100%; display: block;"></div>
                 </div>
             </div>
             <div class="col-xl-4">
@@ -208,21 +208,14 @@ margin-bottom: 30px; }
             const o = document.createElement('option'); o.value = a; o.innerText = a; uFilter.appendChild(o);
         });
 
-        // Loop until height is ready
-        function checkMapHeight() {
-            const container = document.getElementById('map');
-            if (container && container.offsetHeight > 100) {
-                console.log("Map container height ready: " + container.offsetHeight);
+        // Simple delayed render, assuming CSS works now
+        setTimeout(() => {
+            if (map) {
                 map.invalidateSize();
                 renderMap();
                 uFilter.addEventListener('change', e => renderMap(e.target.value));
-            } else {
-                console.warn("Waiting for map container height...");
-                setTimeout(checkMapHeight, 300);
             }
-        }
-
-        setTimeout(checkMapHeight, 500);
+        }, 1000);
 
         // --- CHARTS LOGIC ---
         const sData = JSON.parse('{{ sentimientos_json|escapejs }}');
@@ -252,12 +245,6 @@ margin-bottom: 30px; }
 
     function renderMap(filter = 'all') {
         if (!map) return;
-
-        const container = document.getElementById('map');
-        if (!container || container.offsetHeight < 100) {
-            console.warn("Refusing to render heatmap on 0 height container.");
-            return;
-        }
 
         markersLayer.clearLayers();
         if (heatLayer) map.removeLayer(heatLayer);
