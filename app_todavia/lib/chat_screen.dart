@@ -3,6 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:geolocator/geolocator.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class PantallaChat extends StatefulWidget {
   final String usuarioId;
@@ -35,6 +37,39 @@ class _PantallaChatState extends State<PantallaChat> {
       "es_de_la_ia": true,
       "fecha": DateTime.now(),
     });
+    
+    // Solicitar ubicación al iniciar
+    _enviarUbicacionActual();
+  }
+
+  Future<void> _enviarUbicacionActual() async {
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) return;
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) return;
+      }
+      
+      if (permission == LocationPermission.deniedForever) return;
+
+      Position position = await Geolocator.getCurrentPosition();
+      
+      final url = Uri.parse('${widget.baseUrl}/chat/${widget.usuarioId}/actualizar-ubicacion/');
+      await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "latitud": position.latitude,
+          "longitud": position.longitude,
+        }),
+      );
+      print("Ubicación enviada: ${position.latitude}, ${position.longitude}");
+    } catch (e) {
+      print("Error enviando ubicación: $e");
+    }
   }
 
   void _scrollToBottom() {
@@ -126,16 +161,29 @@ class _PantallaChatState extends State<PantallaChat> {
             _botonEmergencia(Icons.local_fire_department, "BOMBEROS (100)", Colors.orange, "BOMBEROS", "100"),
             _botonEmergencia(Icons.woman, "V. GÉNERO (144)", Colors.purple, "GENERO", "144"),
             const SizedBox(height: 10),
-  Widget _botonEmergencia(IconData icono, String label, Color color, String tipo) {
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _botonEmergencia(IconData icono, String label, Color color, String tipo, String numero) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: ListTile(
         leading: CircleAvatar(backgroundColor: color.withOpacity(0.1), child: Icon(icono, color: color)),
         title: Text(label, style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
-        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-        onTap: () {
+        trailing: const Icon(Icons.phone_in_talk, size: 20, color: Colors.green),
+        onTap: () async {
           Navigator.pop(context);
+          // 1. Registrar el ticket en el servidor
           _registrarTicketAyuda(tipo);
+          
+          // 2. Realizar la llamada real
+          final url = Uri.parse("tel:$numero");
+          if (await canLaunchUrl(url)) {
+            await launchUrl(url);
+          }
         },
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15), side: BorderSide(color: Colors.grey[200]!)),
       ),
@@ -144,15 +192,33 @@ class _PantallaChatState extends State<PantallaChat> {
 
   Future<void> _registrarTicketAyuda(String tipo) async {
     try {
-      final url = Uri.parse('${widget.baseUrl}/usuario/${widget.usuarioId}/ayuda/');
-      await http.post(
+      Position? position;
+      try {
+        position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high,
+          timeLimit: const Duration(seconds: 5),
+        );
+      } catch (_) {}
+
+      final url = Uri.parse('${widget.baseUrl}/usuario/${widget.usuarioId}/ticket-ayuda/');
+      final response = await http.post(
         url,
         headers: {"Content-Type": "application/json"},
-        body: jsonEncode({"tipo": tipo}),
+        body: jsonEncode({
+          "tipo": tipo,
+          "latitud": position?.latitude,
+          "longitud": position?.longitude,
+        }),
       );
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Pedido de ayuda ($tipo) enviado correctamente."), backgroundColor: Colors.green),
-      );
+      
+      if (response.statusCode == 201) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Pedido de ayuda ($tipo) enviado correctamente."), backgroundColor: Colors.green),
+        );
+      } else {
+        print("Error en ticket: ${response.body}");
+        _mostrarError("Error al registrar alerta en el servidor.");
+      }
     } catch (e) {
       _mostrarError("Error enviando alerta. Llama directamente al número de emergencia.");
     }
