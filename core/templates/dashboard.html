@@ -1,6 +1,6 @@
 ﻿{% extends "base.html" %}
 
-{% block title %}Dashboard | Monitoreo Global Todavía{% endblock %}
+{% block title %}Dashboard | Monitoreo Global Todavia{% endblock %}
 
 {% block extra_css %}
 .dashboard-wrapper { padding: 30px 0; }
@@ -37,7 +37,7 @@ margin-bottom: 30px; }
         <div class="row align-items-end mb-4 g-3">
             <div class="col-lg-7">
                 <h1 class="fw-800 text-teal-dark mb-1">Monitoreo Global</h1>
-                <p class="text-muted mb-0">Visualización en tiempo real de la red de bienestar Todavía.</p>
+                <p class="text-muted mb-0">Visualizacion en tiempo real de la red de bienestar Todavia.</p>
             </div>
             <div class="col-lg-5 text-lg-end">
                 <button onclick="generarInforme()" class="btn btn-teal px-4 shadow-sm">
@@ -49,7 +49,7 @@ margin-bottom: 30px; }
         <!-- Filters Bar -->
         <div class="filter-bar d-flex flex-wrap align-items-center gap-4">
             <div class="d-flex align-items-center gap-2">
-                <label class="fw-bold text-muted small text-uppercase">Período:</label>
+                <label class="fw-bold text-muted small text-uppercase">Periodo:</label>
                 <select id="periodo-select" onchange="cambiarPeriodo(this.value)"
                     class="form-select border-0 shadow-none fw-bold text-teal bg-light rounded-3 px-3">
                     <option value="hoy" {% if periodo == "hoy" %}selected{% endif %}>Hoy</option>
@@ -103,7 +103,7 @@ margin-bottom: 30px; }
                         <div class="kpi-icon bg-danger-subtle text-danger"><i class="bi bi-fire"></i></div>
                         <div>
                             <h3 class="fw-800 text-danger mb-0">{{ kpis.zona_roja_activos }}</h3>
-                            <p class="text-muted small fw-bold text-uppercase ls-wide mb-0">Zonas Críticas</p>
+                            <p class="text-muted small fw-bold text-uppercase ls-wide mb-0">Zonas Criticas</p>
                         </div>
                     </div>
                 </div>
@@ -154,18 +154,18 @@ margin-bottom: 30px; }
                                 }}</span>
                         </div>
                         <p class="mb-4 opacity-90"><strong>{{ ticket.usuario.alias }}</strong> solicita asistencia
-                            inmediata en su ubicación.</p>
+                            inmediata en su ubicacion.</p>
                         <button class="btn btn-light w-100 fw-bold rounded-3 btn-ver-en-mapa"
                             data-lat="{{ ticket.latitud }}" data-lng="{{ ticket.longitud }}"
                             data-titulo="Emergencia {{ ticket.tipo }}: {{ ticket.usuario.alias }}">
-                            📍 Ver en el Mapa
+                            Ver en el Mapa
                         </button>
                     </div>
                 </div>
                 {% empty %}
                 <div class="col-12">
                     <div class="card border-0 bg-light p-5 text-center rounded-4">
-                        <p class="text-muted fw-bold mb-0">No hay alertas activas en este período.</p>
+                        <p class="text-muted fw-bold mb-0">No hay alertas activas en este periodo.</p>
                     </div>
                 </div>
                 {% endfor %}
@@ -197,7 +197,7 @@ margin-bottom: 30px; }
         // --- MAP LOGIC ---
         map = L.map('map').setView([-23.5775, -65.3944], 14);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap'
+            attribution: 'OpenStreetMap'
         }).addTo(map);
 
         markersLayer = L.layerGroup().addTo(map);
@@ -208,15 +208,21 @@ margin-bottom: 30px; }
             const o = document.createElement('option'); o.value = a; o.innerText = a; uFilter.appendChild(o);
         });
 
-        // Robust initialization
-        setTimeout(() => {
-            if (!map) return;
-            map.invalidateSize();
-            requestAnimationFrame(() => {
+        // Loop until height is ready
+        function checkMapHeight() {
+            const container = document.getElementById('map');
+            if (container && container.offsetHeight > 100) {
+                console.log("Map container height ready: " + container.offsetHeight);
+                map.invalidateSize();
                 renderMap();
                 uFilter.addEventListener('change', e => renderMap(e.target.value));
-            });
-        }, 1500);
+            } else {
+                console.warn("Waiting for map container height...");
+                setTimeout(checkMapHeight, 300);
+            }
+        }
+
+        setTimeout(checkMapHeight, 500);
 
         // --- CHARTS LOGIC ---
         const sData = JSON.parse('{{ sentimientos_json|escapejs }}');
@@ -236,7 +242,7 @@ margin-bottom: 30px; }
             new Chart(document.getElementById('dispositivosChart'), {
                 type: 'bar',
                 data: {
-                    labels: dData.map(d => d.dispositivo_modelo || 'Genérico'),
+                    labels: dData.map(d => d.dispositivo_modelo || 'Generico'),
                     datasets: [{ label: 'Usuarios', data: dData.map(d => d.total), backgroundColor: '#009688', borderRadius: 8 }]
                 },
                 options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { display: false } }, x: { grid: { display: false } } }, plugins: { legend: { display: false } } }
@@ -247,11 +253,9 @@ margin-bottom: 30px; }
     function renderMap(filter = 'all') {
         if (!map) return;
 
-        // CRITICAL: Check for zero height before adding heatmap
-        if (map.getSize().y === 0) {
-            console.warn("Map height is 0, invalidating size and retrying...");
-            map.invalidateSize();
-            setTimeout(() => renderMap(filter), 200);
+        const container = document.getElementById('map');
+        if (!container || container.offsetHeight < 100) {
+            console.warn("Refusing to render heatmap on 0 height container.");
             return;
         }
 
@@ -280,9 +284,7 @@ margin-bottom: 30px; }
                     max: 4.0
                 }).addTo(map);
             } catch (e) {
-                console.error("Error al crear heatLayer:", e);
-                // Last ditch effort: refresh map size
-                map.invalidateSize();
+                console.error("HeatLayer error:", e);
             }
         }
     }
