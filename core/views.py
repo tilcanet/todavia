@@ -350,7 +350,7 @@ def actualizar_ubicacion(request, usuario_id):
             
             return Response({
                 "mensaje": "Ubicación diaria actualizada correctamente", 
-                "es_nuevo_dia": created
+                "es_nuevo_dia": True  # Simplificado ya que se crea el registro
             })
         else:
             return Response({"error": "Faltan coordenadas"}, status=400)
@@ -398,7 +398,7 @@ def dashboard_view(request):
     import json
 
     # 1. Definir Periodo de Filtrado
-    periodo = request.GET.get('periodo', 'semana') 
+    periodo = request.GET.get('periodo', 'siempre') 
     fecha_param = request.GET.get('fecha')
     ahora = timezone.now()
     
