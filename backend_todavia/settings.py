@@ -32,6 +32,8 @@ DEBUG = os.getenv('DJANGO_DEBUG', 'True') == 'True'
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '*').split(',')
 
+CSRF_TRUSTED_ORIGINS = ['https://todavia.tilcanet.com.ar']
+
 CORS_ALLOW_ALL_ORIGINS = DEBUG  # Allow all only in debug
 
 # Application definition
