@@ -6,7 +6,8 @@ from django.conf.urls.static import static
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('django.contrib.auth.urls')),
-    path('api/', include('core.urls')),
+    path('', include('core.urls')),  # Para la web (Home, Dashboard)
+    path('api/', include('core.urls')), # Para el móvil (Retrocompatibilidad)
 ]
 
 if settings.DEBUG:
