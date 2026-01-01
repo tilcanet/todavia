@@ -18,6 +18,13 @@ void main() {
   WidgetsFlutterBinding.ensureInitialized();
   debugPrint("[TODAVIA] 2. Binding Inicializado");
   
+  // MODO INMERSIVO (Pantalla Completa)
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    statusBarIconBrightness: Brightness.dark,
+  ));
+
   runApp(const TodaviaApp());
   debugPrint("[TODAVIA] 3. runApp llamado");
 }

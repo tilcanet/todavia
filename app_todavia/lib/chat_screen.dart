@@ -102,8 +102,9 @@ class _PantallaChatState extends State<PantallaChat> {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
         decoration: const BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
@@ -113,24 +114,18 @@ class _PantallaChatState extends State<PantallaChat> {
           children: [
             Container(
               width: 50, height: 5,
+              margin: const EdgeInsets.only(bottom: 20),
               decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(10)),
             ),
-            const SizedBox(height: 20),
-            Text("BOTONES DE EMERGENCIA", style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.redAccent)),
+            Text("AYUDA INMEDIATA", style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.redAccent)),
+            const SizedBox(height: 8),
+            Text("Se registrará tu ubicación para asistencia.", style: GoogleFonts.outfit(color: Colors.grey, fontSize: 13)),
+            const SizedBox(height: 25),
+            _botonEmergencia(Icons.medical_services, "SAME (107)", Colors.red, "SAME", "107"),
+            _botonEmergencia(Icons.local_police, "POLICÍA (911)", Colors.blue, "POLICIA", "911"),
+            _botonEmergencia(Icons.local_fire_department, "BOMBEROS (100)", Colors.orange, "BOMBEROS", "100"),
+            _botonEmergencia(Icons.woman, "V. GÉNERO (144)", Colors.purple, "GENERO", "144"),
             const SizedBox(height: 10),
-            Text("Al presionar, se registrará el pedido de ayuda.", style: GoogleFonts.outfit(color: Colors.grey)),
-            const SizedBox(height: 30),
-            _botonEmergencia(Icons.medical_services, "SAME (107)", Colors.red, "SAME"),
-            _botonEmergencia(Icons.local_police, "POLICÍA (911)", Colors.blue, "POLICIA"),
-            _botonEmergencia(Icons.local_fire_department, "BOMBEROS (100)", Colors.orange, "BOMBEROS"),
-            _botonEmergencia(Icons.woman, "VIOLENCIA GÉNERO (144)", Colors.purple, "GENERO"),
-            const SizedBox(height: 20),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _botonEmergencia(IconData icono, String label, Color color, String tipo) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -178,7 +173,15 @@ class _PantallaChatState extends State<PantallaChat> {
         centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.sos, color: Colors.redAccent, size: 30),
+            icon: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.redAccent.withOpacity(0.1),
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.redAccent, width: 2),
+              ),
+              child: const Icon(Icons.emergency_share_outlined, color: Colors.redAccent, size: 24),
+            ),
             onPressed: _mostrarOpcionesEmergencia,
           ),
         ],
