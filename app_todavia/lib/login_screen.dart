@@ -3,10 +3,12 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'dart:io'; // <--- AGREGADO
-import 'package:device_info_plus/device_info_plus.dart'; // <--- AGREGADO
+import 'dart:io'; 
+import 'package:device_info_plus/device_info_plus.dart'; 
+import 'package:shared_preferences/shared_preferences.dart'; // <--- AGREGADO
+import 'package:uuid/uuid.dart'; // <--- AGREGADO
 import 'main.dart'; 
-import 'chat_screen.dart'; // <--- AGREGADO
+import 'chat_screen.dart'; 
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -18,8 +20,7 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _aliasController = TextEditingController();
   
-  // ID FIJO PARA PRUEBAS
-  final String _usuarioId = "3e084ecf-258b-427b-8409-98cdf40ab3fb"; 
+  String? _usuarioId; // Ahora es dinámico
   final String _baseUrl = "https://todavia.tilcanet.com.ar/api"; 
 
   bool _cargando = false;
@@ -28,6 +29,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void initState() {
     super.initState();
+    _cargarUsuario(); // Cargar o generar ID al inicio
     Future.delayed(const Duration(milliseconds: 2500), () {
       if (mounted) {
         setState(() => _mostrarInput = true);
@@ -35,10 +37,38 @@ class _LoginScreenState extends State<LoginScreen> {
     });
   }
 
+  // Lógica para obtener o crear ID único
+  Future<void> _cargarUsuario() async {
+    final prefs = await SharedPreferences.getInstance();
+    String? idGuardado = prefs.getString('usuario_id');
+    String? aliasGuardado = prefs.getString('usuario_alias');
+
+    if (idGuardado == null) {
+      // Es la primera vez que entra, generamos un ID único
+      idGuardado = const Uuid().v4();
+      await prefs.setString('usuario_id', idGuardado);
+      debugPrint("Generado NUEVO ID de usuario: $idGuardado");
+    } else {
+      debugPrint("Recuperado ID de usuario existente: $idGuardado");
+    }
+
+    if (aliasGuardado != null) {
+      _aliasController.text = aliasGuardado;
+    }
+
+    setState(() {
+      _usuarioId = idGuardado;
+    });
+  }
+
   Future<void> _entrar() async {
-    if (_aliasController.text.trim().isEmpty) return;
+    if (_aliasController.text.trim().isEmpty || _usuarioId == null) return;
 
     setState(() => _cargando = true);
+
+    // Guardar el alias localmente también
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('usuario_alias', _aliasController.text);
 
     String modelo = "Desconocido";
     String os = Platform.operatingSystem;
@@ -73,7 +103,7 @@ class _LoginScreenState extends State<LoginScreen> {
           context,
           PageRouteBuilder(
             pageBuilder: (_, __, ___) => PantallaChat(
-              usuarioId: _usuarioId, 
+              usuarioId: _usuarioId!, 
               baseUrl: _baseUrl,
               aliasUsuario: _aliasController.text
             ),

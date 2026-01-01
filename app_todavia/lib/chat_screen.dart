@@ -117,6 +117,9 @@ class _PantallaChatState extends State<PantallaChat> {
           });
         });
         _scrollToBottom();
+        if (data['alerta_crisis'] == true) {
+          _mostrarOpcionesEmergencia();
+        }
       } else {
         _mostrarError("Error del servidor: ${respuesta.statusCode}");
       }
