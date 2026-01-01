@@ -3,7 +3,7 @@
 # Script de Despliegue Automático - TODAVÍA
 # Este script se ejecuta en el servidor (VM)
 
-PROJECT_DIR="/root/proyecto_todavia"
+PROJECT_DIR="/var/www/tilcanet.com.ar/todavia"
 VENV_DIR="$PROJECT_DIR/venv"
 
 echo "=== Iniciando Despliegue de Cambios ==="
