@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Iniciar Sesión | Todavía{% endblock %}
+
+{% block content %}
+<div class="container py-5 my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+                <div class="bg-teal p-4 text-center text-white">
+                    <i class="bi bi-shield-lock-fill display-4 mb-2"></i>
+                    <h2 class="fw-bold mb-0">Acceso Administrativo</h2>
+                    <p class="opacity-75 mb-0 small">Solo personal autorizado</p>
+                </div>
+                <div class="card-body p-4 p-md-5">
+
+                    {% if form.errors %}
+                    <div class="alert alert-danger border-0 rounded-3 mb-4">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        Usuario o contraseña incorrectos.
+                    </div>
+                    {% endif %}
+
+                    <form method="post" action="{% url 'login' %}">
+                        {% csrf_token %}
+                        <div class="mb-4">
+                            <label for="id_username" class="form-label fw-bold text-muted small">USUARIO</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-0"><i
+                                        class="bi bi-person-fill text-teal"></i></span>
+                                <input type="text" name="username" id="id_username"
+                                    class="form-control form-control-lg bg-light border-0 shadow-none fs-6"
+                                    placeholder="Nombre de usuario" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-5">
+                            <label for="id_password" class="form-label fw-bold text-muted small">CONTRASEÑA</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-0"><i
+                                        class="bi bi-key-fill text-teal"></i></span>
+                                <input type="password" name="password" id="id_password"
+                                    class="form-control form-control-lg bg-light border-0 shadow-none fs-6"
+                                    placeholder="••••••••" required>
+                            </div>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-teal btn-lg fw-bold py-3 shadow-sm">
+                                <i class="bi bi-box-arrow-in-right me-2"></i> Ingresar al Dashboard
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="text-center mt-4 pt-2">
+                        <a href="/" class="text-decoration-none text-muted small hover-teal transition-all">
+                            <i class="bi bi-arrow-left me-1"></i> Volver al inicio
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+.bg-teal { background-color: var(--primary-color) !important; }
+.text-teal { color: var(--primary-color) !important; }
+.form-control:focus {
+background-color: #fff !important;
+box-shadow: 0 0 0 4px rgba(0, 150, 136, 0.1) !important;
+}
+.hover-teal:hover { color: var(--primary-color) !important; }
+.transition-all { transition: all 0.2s ease; }
+{% endblock %}

@@ -1,0 +1,31 @@
+var json_POSTASJUJUY_6 = {
+"type": "FeatureCollection",
+"name": "POSTASJUJUY_6",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+{ "type": "Feature", "properties": { "Nombre": "POSTA LA ALMONA (3)", "Clasificac": "POSTA", "Domicilio": "FINCA FICOSECO - RUTA PROVINCIAL NḞ 2", "Teléfono": null, "Email 1": null }, "geometry": { "type": "Point", "coordinates": [ -65.3838347, -24.2685749 ] } },
+{ "type": "Feature", "properties": { "Nombre": "POSTA TIRAXI (3)", "Clasificac": "POSTA", "Domicilio": "RUTA PROVINCIAL NḞ 29 - CAMINO A TESORERO", "Teléfono": null, "Email 1": null }, "geometry": { "type": "Point", "coordinates": [ -65.324929, -23.998155 ] } },
+{ "type": "Feature", "properties": { "Nombre": "POSTA FUEN SANTA DE MURCIA (7) (EX SAUCE GUACHO)", "Clasificac": "POSTA", "Domicilio": "RUTA PROVINCIAL Nẃ 6", "Teléfono": null, "Email 1": null }, "geometry": { "type": "Point", "coordinates": [ -64.6340125, -24.2701405 ] } },
+{ "type": "Feature", "properties": { "Nombre": "POSTA CIENEGUILLA (16)", "Clasificac": "POSTA", "Domicilio": "CIENEGUILLA", "Teléfono": null, "Email 1": null }, "geometry": { "type": "Point", "coordinates": [ -65.445794, -23.678849 ] } },
+{ "type": "Feature", "properties": { "Nombre": "POSTA PUERTA DEL LIPAN (16)", "Clasificac": "POSTA", "Domicilio": "PUERTA DE LIPÁN", "Teléfono": null, "Email 1": null }, "geometry": { "type": "Point", "coordinates": [ -65.573745, -23.668008 ] } },
+{ "type": "Feature", "properties": { "Nombre": "POSTA LA CIENAGA (16)", "Clasificac": "POSTA", "Domicilio": "LA CIENAGA", "Teléfono": null, "Email 1": null }, "geometry": { "type": "Point", "coordinates": [ -65.542284, -23.701293 ] } },
+{ "type": "Feature", "properties": { "Nombre": "POSTA HUACHICHOCANA (16)", "Clasificac": "POSTA", "Domicilio": "HUACHICHOCANA", "Teléfono": null, "Email 1": null }, "geometry": { "type": "Point", "coordinates": [ -65.601767, -23.726596 ] } },
+{ "type": "Feature", "properties": { "Nombre": "POSTA CHILCAYOC (16)", "Clasificac": "POSTA", "Domicilio": "CHILCAYOC", "Teléfono": null, "Email 1": null }, "geometry": { "type": "Point", "coordinates": [ -65.47229, -23.93888 ] } },
+{ "type": "Feature", "properties": { "Nombre": "POSTA TUMBAYA GRANDE (16)", "Clasificac": "POSTA", "Domicilio": "TUMBAYA GRANDE", "Teléfono": null, "Email 1": null }, "geometry": { "type": "Point", "coordinates": [ -65.499239, -23.819505 ] } },
+{ "type": "Feature", "properties": { "Nombre": "POSTA CASA GRANDE (19)", "Clasificac": "POSTA", "Domicilio": "CASA GRANDE S\/NḞ", "Teléfono": null, "Email 1": null }, "geometry": { "type": "Point", "coordinates": [ -65.553265, -23.221801 ] } },
+{ "type": "Feature", "properties": { "Nombre": "POSTA PORTILLO (19)", "Clasificac": "POSTA", "Domicilio": "ZONA RURAL PORTILLO", "Teléfono": null, "Email 1": null }, "geometry": { "type": "Point", "coordinates": [ -65.6011977, -23.3160794 ] } },
+{ "type": "Feature", "properties": { "Nombre": "POSTA VALIAZO (19)", "Clasificac": "POSTA", "Domicilio": "ZONA RURAL", "Teléfono": null, "Email 1": null }, "geometry": { "type": "Point", "coordinates": [ -65.273558, -23.1853113 ] } },
+{ "type": "Feature", "properties": { "Nombre": "POSTA CASILLAS (19)", "Clasificac": "POSTA", "Domicilio": "ZONA RURAL CASILLAS", "Teléfono": null, "Email 1": null }, "geometry": { "type": "Point", "coordinates": [ -65.360969, -22.728025 ] } },
+{ "type": "Feature", "properties": { "Nombre": "POSTA CHORROS (19)", "Clasificac": "POSTA", "Domicilio": "ZONA RURAL CHORROS", "Teléfono": null, "Email 1": null }, "geometry": { "type": "Point", "coordinates": [ -65.372785, -22.878139 ] } },
+{ "type": "Feature", "properties": { "Nombre": "POSTA AZUL PAMPA (19)", "Clasificac": "POSTA", "Domicilio": "nn 12", "Teléfono": null, "Email 1": null }, "geometry": { "type": "Point", "coordinates": [ -65.436975, -22.968873 ] } },
+{ "type": "Feature", "properties": { "Nombre": "POSTA PUEBLO VIEJO (20)", "Clasificac": "POSTA", "Domicilio": "CALLE S\/N PUEBLO VIEJO", "Teléfono": null, "Email 1": null }, "geometry": { "type": "Point", "coordinates": [ -65.641796, -22.494152 ] } },
+{ "type": "Feature", "properties": { "Nombre": "POSTA RUMICRUZ (20)", "Clasificac": "POSTA", "Domicilio": "Rumi Cruz", "Teléfono": null, "Email 1": null }, "geometry": { "type": "Point", "coordinates": [ -65.506145, -22.723474 ] } },
+{ "type": "Feature", "properties": { "Nombre": "POSTA QUETA (20)", "Clasificac": "POSTA", "Domicilio": "QUETA", "Teléfono": null, "Email 1": null }, "geometry": { "type": "Point", "coordinates": [ -65.972223, -22.68014 ] } },
+{ "type": "Feature", "properties": { "Nombre": "POSTA CIENEGA GRANDE (20)", "Clasificac": "POSTA", "Domicilio": "ZONA RURAL CIÉNEGO GRANDE", "Teléfono": null, "Email 1": null }, "geometry": { "type": "Point", "coordinates": [ -65.248825, -22.111408 ] } },
+{ "type": "Feature", "properties": { "Nombre": "POSTA YOSCABA (21)", "Clasificac": "POSTA", "Domicilio": "CIENEGUILLAS", "Teléfono": null, "Email 1": null }, "geometry": { "type": "Point", "coordinates": [ -66.025029, -22.1656195 ] } },
+{ "type": "Feature", "properties": { "Nombre": "POSTA PISCUNO (21)", "Clasificac": "POSTA", "Domicilio": "CALLE SIN NOMBRE SIN NUMERO", "Teléfono": null, "Email 1": null }, "geometry": { "type": "Point", "coordinates": [ -65.9512188, -21.9356373 ] } },
+{ "type": "Feature", "properties": { "Nombre": "POSTA CORRAL BLANCO (21)", "Clasificac": "POSTA", "Domicilio": "CORRAL BLANCO", "Teléfono": null, "Email 1": null }, "geometry": { "type": "Point", "coordinates": [ -65.370005, -22.477463 ] } },
+{ "type": "Feature", "properties": { "Nombre": "POSTA LARCAS (21)", "Clasificac": "POSTA", "Domicilio": "CALLE SIN NUMERO SIN NOMBRE", "Teléfono": null, "Email 1": null }, "geometry": { "type": "Point", "coordinates": [ -65.248825, -22.111408 ] } },
+{ "type": "Feature", "properties": { "Nombre": "POSTA CANGREJOS (21)", "Clasificac": "POSTA", "Domicilio": "CALLE SIN NOMBRE SIN NUMERO", "Teléfono": null, "Email 1": null }, "geometry": { "type": "Point", "coordinates": [ -65.551089, -22.472039 ] } }
+]
+}

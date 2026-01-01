@@ -1,0 +1,288 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard | Monitoreo Global Todavía{% endblock %}
+
+{% block extra_css %}
+.dashboard-wrapper { padding: 30px 0; }
+#map { height: 500px; width: 100%; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); border: 1px solid
+#edf2f7; z-index: 1; }
+
+.kpi-card { border: none; border-radius: 20px; transition: transform 0.3s; background: white; box-shadow: 0 4px 15px
+rgba(0,0,0,0.02); }
+.kpi-card:hover { transform: translateY(-5px); }
+.kpi-icon { width: 55px; height: 55px; border-radius: 15px; display: flex; align-items: center; justify-content: center;
+font-size: 1.5rem; }
+
+.chart-container { position: relative; height: 250px; width: 100%; }
+
+.filter-bar { background: white; padding: 15px 25px; border-radius: 20px; box-shadow: 0 5px 20px rgba(0,0,0,0.03);
+margin-bottom: 30px; }
+
+.ticket-card { border: none; border-radius: 20px; color: white; transition: all 0.3s; }
+.ticket-card:hover { transform: scale(1.02); }
+.bg-gradient-danger { background: linear-gradient(135deg, #FF6B6B 0%, #EE5A6F 100%); }
+
+@keyframes pulso-rojo {
+0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 82, 82, 0.7); }
+70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(255, 82, 82, 0); }
+100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 82, 82, 0); }
+}
+.zona-roja-marker { animation: pulso-rojo 2s infinite; }
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrapper">
+    <div class="container">
+        <!-- Header & Title -->
+        <div class="row align-items-end mb-4 g-3">
+            <div class="col-lg-7">
+                <h1 class="fw-800 text-teal-dark mb-1">Monitoreo Global</h1>
+                <p class="text-muted mb-0">Visualización en tiempo real de la red de bienestar Todavía.</p>
+            </div>
+            <div class="col-lg-5 text-lg-end">
+                <button onclick="generarInforme()" class="btn btn-teal px-4 shadow-sm">
+                    <i class="bi bi-file-earmark-pdf-fill me-2"></i> Exportar Reporte
+                </button>
+            </div>
+        </div>
+
+        <!-- Filters Bar -->
+        <div class="filter-bar d-flex flex-wrap align-items-center gap-4">
+            <div class="d-flex align-items-center gap-2">
+                <label class="fw-bold text-muted small text-uppercase">Período:</label>
+                <select id="periodo-select" onchange="cambiarPeriodo(this.value)"
+                    class="form-select border-0 shadow-none fw-bold text-teal bg-light rounded-3 px-3">
+                    <option value="hoy" {% if periodo == 'hoy' %}selected{% endif %}>Hoy</option>
+                    <option value="semana" {% if periodo == 'semana' %}selected{% endif %}>Semana</option>
+                    <option value="mes" {% if periodo == 'mes' %}selected{% endif %}>Mes</option>
+                    <option value="siempre" {% if periodo == 'siempre' %}selected{% endif %}>Todo</option>
+                </select>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <label class="fw-bold text-muted small text-uppercase">Fecha:</label>
+                <input type="date" id="fecha-picker" onchange="cambiarFecha(this.value)"
+                    value="{% if '-' in periodo %}{{ periodo }}{% endif %}"
+                    class="form-control border-0 shadow-none fw-bold text-teal bg-light rounded-3 px-3">
+            </div>
+            <div class="ms-auto d-flex align-items-center gap-2">
+                <label class="fw-bold text-muted small text-uppercase">Filtro Mapa:</label>
+                <select id="user-filter"
+                    class="form-select border-0 shadow-none fw-bold text-teal bg-light rounded-3 px-3">
+                    <option value="all">Todos</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- KPI Row -->
+        <div class="row g-4 mb-5">
+            <div class="col-md-4">
+                <div class="card kpi-card p-4">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="kpi-icon bg-light text-teal"><i class="bi bi-people-fill"></i></div>
+                        <div>
+                            <h3 class="fw-800 mb-0">{{ kpis.usuarios }}</h3>
+                            <p class="text-muted small fw-bold text-uppercase ls-wide mb-0">Total Registros</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card kpi-card p-4">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="kpi-icon bg-light text-teal"><i class="bi bi-chat-quote-fill"></i></div>
+                        <div>
+                            <h3 class="fw-800 mb-0">{{ kpis.mensajes }}</h3>
+                            <p class="text-muted small fw-bold text-uppercase ls-wide mb-0">Interacciones</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card kpi-card p-4 border-start border-danger border-4">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="kpi-icon bg-danger-subtle text-danger"><i class="bi bi-fire"></i></div>
+                        <div>
+                            <h3 class="fw-800 text-danger mb-0">{{ kpis.zona_roja_activos }}</h3>
+                            <p class="text-muted small fw-bold text-uppercase ls-wide mb-0">Zonas Críticas</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Viz Row -->
+        <div class="row g-4 mb-5">
+            <div class="col-xl-8">
+                <div class="card border-0 shadow-sm rounded-4 p-3 bg-white">
+                    <div id="map"></div>
+                </div>
+            </div>
+            <div class="col-xl-4">
+                <div class="row g-4">
+                    <div class="col-12">
+                        <div class="card border-0 shadow-sm rounded-4 p-4 h-100 bg-white" style="min-height: 280px;">
+                            <h5 class="fw-bold mb-4">Contexto Emocional</h5>
+                            <div class="chart-container">
+                                <canvas id="sentimientosChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="card border-0 shadow-sm rounded-4 p-4 h-100 bg-white" style="min-height: 250px;">
+                            <h5 class="fw-bold mb-4">Uso de Dispositivos</h5>
+                            <div class="chart-container">
+                                <canvas id="dispositivosChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tickets Section -->
+        <div class="mb-5">
+            <h4 class="fw-bold mb-4 d-flex align-items-center gap-2">
+                <i class="bi bi-bell-fill text-danger"></i> Alertas de Ayuda Directa
+            </h4>
+            <div class="row g-3">
+                {% for ticket in tickets_emergencia %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="card ticket-card bg-gradient-danger p-4 shadow-sm">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <h5 class="fw-800 mb-0 text-white">{{ ticket.tipo }}</h5>
+                            <span class="badge bg-white text-danger rounded-pill fw-bold">{{ ticket.fecha|date:"H:i"
+                                }}</span>
+                        </div>
+                        <p class="mb-4 opacity-90"><strong>{{ ticket.usuario.alias }}</strong> solicita asistencia
+                            inmediata en su ubicación.</p>
+                        <button class="btn btn-light w-100 fw-bold rounded-3 btn-ver-en-mapa"
+                            data-lat="{{ ticket.latitud }}" data-lng="{{ ticket.longitud }}"
+                            data-titulo="Emergencia {{ ticket.tipo }}: {{ ticket.usuario.alias }}">
+                            📍 Ver en el Mapa
+                        </button>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12">
+                    <div class="card border-0 bg-light p-5 text-center rounded-4">
+                        <p class="text-muted fw-bold mb-0">No hay alertas activas en este período.</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    function cambiarPeriodo(val) { window.location.href = "?periodo=" + val; }
+    function cambiarFecha(val) { window.location.href = "?periodo=" + val; }
+
+    let map;
+    let markersLayer;
+    let heatLayer = null;
+    const datosMapa = JSON.parse('{{ puntos_gps|escapejs }}');
+
+    function initDashboard() {
+        // --- MAP LOGIC ---
+        map = L.map('map').setView([-23.5775, -65.3944], 14);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
+
+        markersLayer = L.layerGroup().addTo(map);
+
+        // Populate user filter
+        const uFilter = document.getElementById('user-filter');
+        [...new Set(datosMapa.map(p => p.alias))].sort().forEach(a => {
+            const o = document.createElement('option'); o.value = a; o.innerText = a; uFilter.appendChild(o);
+        });
+
+        renderMap();
+        uFilter.addEventListener('change', e => renderMap(e.target.value));
+
+        // Force size calculation after a short delay
+        setTimeout(() => { map.invalidateSize(); }, 500);
+
+        // --- CHARTS LOGIC ---
+        const sData = JSON.parse('{{ sentimientos_json|escapejs }}');
+        if (sData.length > 0) {
+            new Chart(document.getElementById('sentimientosChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: sData.map(s => s.sentimiento_detectado),
+                    datasets: [{ data: sData.map(s => s.total), backgroundColor: ['#009688', '#26A69A', '#4DB6AC', '#80CBC4', '#B2DFDB'] }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { position: 'bottom', labels: { font: { family: 'Outfit', weight: '700' }, boxWidth: 10 } } } }
+            });
+        }
+
+        const dData = JSON.parse('{{ dispositivos_json|escapejs }}');
+        if (dData.length > 0) {
+            new Chart(document.getElementById('dispositivosChart'), {
+                type: 'bar',
+                data: {
+                    labels: dData.map(d => d.dispositivo_modelo || 'Genérico'),
+                    datasets: [{ label: 'Usuarios', data: dData.map(d => d.total), backgroundColor: '#009688', borderRadius: 8 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { display: false } }, x: { grid: { display: false } } }, plugins: { legend: { display: false } } }
+            });
+        }
+    }
+
+    function renderMap(filter = 'all') {
+        markersLayer.clearLayers();
+        if (heatLayer) map.removeLayer(heatLayer);
+        const data = filter === 'all' ? datosMapa : datosMapa.filter(p => p.alias === filter);
+
+        data.forEach(p => {
+            const jLat = (Math.random() - 0.5) * 0.0001;
+            const jLng = (Math.random() - 0.5) * 0.0001;
+            L.circleMarker([parseFloat(p.lat) + jLat, parseFloat(p.lng) + jLng], {
+                radius: p.en_zona_roja ? 12 : 6,
+                fillColor: p.en_zona_roja ? "#FF5252" : "#009688",
+                color: "white", weight: p.en_zona_roja ? 3 : 1, fillOpacity: 0.8,
+                className: p.en_zona_roja ? 'zona-roja-marker' : ''
+            }).addTo(markersLayer).bindPopup(`<b>${p.alias}</b><br>${p.fecha}`);
+        });
+
+        if (data.length) {
+            heatLayer = L.heatLayer(data.map(p => [parseFloat(p.lat), parseFloat(p.lng), p.intensity]), { radius: 35, blur: 25 }).addTo(map);
+        }
+    }
+
+    // Run initialization
+    document.addEventListener('DOMContentLoaded', initDashboard);
+
+    // --- EVENT HANDLERS ---
+    document.addEventListener('click', e => {
+        if (e.target.classList.contains('btn-ver-en-mapa')) {
+            const lat = parseFloat(e.target.getAttribute('data-lat'));
+            const lng = parseFloat(e.target.getAttribute('data-lng'));
+            map.setView([lat, lng], 17);
+            L.marker([lat, lng]).addTo(map).bindPopup(e.target.getAttribute('data-titulo')).openPopup();
+            document.getElementById('map').scrollIntoView({ behavior: 'smooth' });
+        }
+    });
+
+    async function generarInforme() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('p', 'mm', 'a4');
+        const element = document.querySelector('.dashboard-wrapper');
+        const canvas = await html2canvas(element, { scale: 2 });
+        const imgData = canvas.toDataURL('image/png');
+        doc.addImage(imgData, 'PNG', 0, 0, 210, (canvas.height * 210) / canvas.width);
+        doc.save(`Reporte_Todavia_${new Date().toISOString().slice(0, 10)}.pdf`);
+    }
+</script>
+{% endblock %}
