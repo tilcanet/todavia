@@ -75,6 +75,8 @@ def registrar_usuario(request):
 
 @api_view(['POST'])
 def enviar_mensaje(request, usuario_id):
+    from .models import Aliado, SesionHumana # Importación local
+
     # 1. Validar Usuario
     try:
         usuario = UsuarioAnonimo.objects.get(id=usuario_id)
@@ -90,20 +92,48 @@ def enviar_mensaje(request, usuario_id):
     # 3. Guardar mensaje del usuario (SIEMPRE se guarda primero)
     Mensaje.objects.create(usuario=usuario, texto=texto_usuario, es_de_la_ia=False)
 
+    # 0. CHEQUEO DE SESIÓN HUMANA ACTIVA
+    # Si ya está hablando con un humano, la IA se calla.
+    sesion_activa = SesionHumana.objects.filter(usuario=usuario, activa=True).first()
+    if sesion_activa:
+        # Aquí la app del Aliado debería hacer polling para recibir este mensaje
+        return Response({"respuesta": "", "modo_humano": True})
+
     # --- NUEVO: DETECCIÓN DE SUGERENCIAS/LO QUE FALTA ---
-    # Si el usuario dice que "falta" algo o similares, lo guardamos como sugerencia.
     palabras_clave_sugerencia = ['falta', 'necesitamos', 'debería', 'estaría bueno', 'necesito que', 'podrían', 'mejorar']
     try:
         if any(p in texto_usuario.lower() for p in palabras_clave_sugerencia):
-            # Verificamos que no sea un duplicado exacto reciente para no spamear
             if not Sugerencia.objects.filter(usuario=usuario, texto=texto_usuario).exists():
                 Sugerencia.objects.create(usuario=usuario, texto=texto_usuario)
     except Exception as e:
         print(f"Error guardando sugerencia: {e}")
 
+    texto_lower = texto_usuario.lower()
+
+    # --- LÓGICA DE CONEXIÓN CON HUMANO ---
+    # Si está en crisis y dice que SÍ (o pide hablar con alguien explícitamente)
+    intencion_humana = 'hablar con alguien' in texto_lower or 'persona real' in texto_lower
+    respuesta_afirmativa_crisis = usuario.en_zona_roja and any(x == texto_lower for x in ['si', 'sí', 'bueno', 'dale', 'por favor'])
+    
+    if intencion_humana or respuesta_afirmativa_crisis:
+         aliado_disp = Aliado.objects.filter(esta_disponible=True).first()
+         if aliado_disp:
+             SesionHumana.objects.create(usuario=usuario, aliado=aliado_disp, activa=True)
+             # aliado_disp.esta_disponible = False # Opcional: Si queremos que atienda a uno solo a la vez
+             # aliado_disp.save()
+             
+             msg_sys = f"Te he conectado con {aliado_disp.nombre_visible} ({aliado_disp.get_especialidad_display()}). Te leerá en breve."
+             Mensaje.objects.create(usuario=usuario, texto=msg_sys, es_de_la_ia=True)
+             
+             return Response({"respuesta": msg_sys, "modo_humano": True})
+         else:
+             if intencion_humana: # Solo si lo pidió explícitamente avisamos que no hay nadie
+                 msg_sys = "Lo siento, no hay aliados conectados ahora mismo. Pero yo sigo aquí."
+                 Mensaje.objects.create(usuario=usuario, texto=msg_sys, es_de_la_ia=True)
+                 return Response({"respuesta": msg_sys, "alerta_crisis": False})
+
     # 4. DETECTOR DE CRISIS (Seguridad)
     modo_crisis = False
-    texto_lower = texto_usuario.lower()
     for pattern in KEYWORDS_CRISIS:
         if re.search(pattern, texto_lower):
             modo_crisis = True
@@ -113,6 +143,10 @@ def enviar_mensaje(request, usuario_id):
     if modo_crisis:
         texto_respuesta = "Estoy detectando mucho dolor en tus palabras. Por favor, no estás solo en esto. Necesito que hablemos con alguien real ahora mismo. Toca el botón rojo de ayuda."
         
+        # Ofrecer Aliado si hay
+        if Aliado.objects.filter(esta_disponible=True).exists():
+            texto_respuesta += "\n\n(Hay vecinos escuchando ahora mismo. ¿Quieres que te conecte con uno? Responde SÍ)."
+
         # Guardamos alerta
         msg = Mensaje.objects.create(usuario=usuario, texto=texto_respuesta, es_de_la_ia=True)
         msg.sentimiento_detectado = "RIESGO_ALTO" 
@@ -516,3 +550,106 @@ def dashboard_view(request):
     }
     
     return render(request, 'dashboard.html', context)
+
+# ---------------------------------------------------------
+#                 APP ALIADOS (Profesionales/Amigos)
+# ---------------------------------------------------------
+
+@api_view(['POST'])
+def registrar_aliado(request):
+    """
+    Registro desde la App de Acompañante.
+    Crea un Djando User + Perfil Aliado.
+    """
+    from django.contrib.auth.models import User
+    from .models import Aliado
+    
+    data = request.data
+    username = data.get('username') # Email o telefono
+    password = data.get('password')
+    nombre = data.get('nombre_visible')
+    telefono = data.get('telefono')
+    especialidad = data.get('especialidad', 'VECINO')
+    especialidad_otro = data.get('especialidad_otro', '')
+    
+    if not username or not password or not nombre:
+        return Response({"error": "Faltan datos obligatorios"}, status=400)
+        
+    if User.objects.filter(username=username).exists():
+        return Response({"error": "Este usuario ya existe"}, status=400)
+    
+    try:
+        # Crear User
+        user = User.objects.create_user(username=username, password=password)
+        
+        # Crear Aliado
+        aliado = Aliado.objects.create(
+            usuario_real=user,
+            nombre_visible=nombre,
+            telefono=telefono,
+            especialidad=especialidad,
+            especialidad_otro=especialidad_otro,
+            esta_disponible=True # Al registrarse ya queda disponible
+        )
+        
+        return Response({
+            "mensaje": "Cuenta creada con éxito",
+            "aliado_id": aliado.id,
+            "nombre": aliado.nombre_visible,
+            "especialidad": aliado.get_especialidad_display()
+        }, status=201)
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
+
+@api_view(['POST'])
+def login_aliado(request):
+    """
+    Login simple para la App de Acompañante.
+    """
+    from django.contrib.auth import authenticate
+    
+    username = request.data.get('username')
+    password = request.data.get('password')
+    
+    # Intenta autenticar
+    user = authenticate(username=username, password=password)
+    
+    if user:
+        try:
+            aliado = user.perfil_aliado
+            # Auto-activar al loguearse
+            aliado.esta_disponible = True
+            aliado.save()
+            
+            return Response({
+                "mensaje": "Login exitoso",
+                "aliado_id": aliado.id,
+                "nombre": aliado.nombre_visible,
+                "especialidad": aliado.get_especialidad_display(),
+                "esta_disponible": aliado.esta_disponible
+            })
+        except:
+             return Response({"error": "Este usuario no tiene perfil de Aliado"}, status=403)
+    else:
+        return Response({"error": "Credenciales inválidas"}, status=401)
+
+@api_view(['POST'])
+def estado_aliado(request, aliado_id):
+    """
+    Switch ON/OFF (Estoy en línea / Me voy)
+    """
+    from .models import Aliado
+    try:
+        aliado = Aliado.objects.get(id=aliado_id)
+        nuevo_estado = request.data.get('disponible') # Boolean
+        
+        if nuevo_estado is not None:
+            aliado.esta_disponible = nuevo_estado
+            aliado.save()
+        
+        return Response({
+            "mensaje": "Estado actualizado", 
+            "esta_disponible": aliado.esta_disponible
+        })
+    except Aliado.DoesNotExist:
+        return Response({"error": "Aliado no encontrado"}, status=404)

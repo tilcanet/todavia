@@ -13,4 +13,9 @@ urlpatterns = [
     path('usuario/<uuid:usuario_id>/ticket-ayuda/', views.registrar_ticket_ayuda, name='ticket_ayuda'),
     path('reporte-publico/', reports_view.reporte_politicas_publicas, name='reporte_publico'),
     path('dashboard/', views.dashboard_view, name='dashboard'),
+    
+    # --- APP ALIADOS ---
+    path('aliado/registro/', views.registrar_aliado, name='registrar_aliado'),
+    path('aliado/login/', views.login_aliado, name='login_aliado'),
+    path('aliado/<int:aliado_id>/estado/', views.estado_aliado, name='estado_aliado'),
 ]

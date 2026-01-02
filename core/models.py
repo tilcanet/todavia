@@ -61,7 +61,20 @@ class Aliado(models.Model):
     # Vinculamos al Aliado con el sistema de usuarios real de Django (para que tenga usuario y contraseña)
     usuario_real = models.OneToOneField(User, on_delete=models.CASCADE, related_name='perfil_aliado')
     
+    ESPECIALIDADES = [
+        ('TRABAJOR_SOCIAL', 'Trabajador/a Social'),
+        ('PSICOLOGO', 'Psicólogo/a'),
+        ('TERAPEUTA', 'Terapeuta'),
+        ('PSIQUIATRA', 'Psiquiatra'),
+        ('ENFERMERO', 'Enfermero/a'),
+        ('RELIGIOSO', 'Religioso/a'),
+        ('VECINO', 'Vecino/a Voluntario'),
+        ('OTRO', 'Otro (Especifique)'),
+    ]
+
     nombre_visible = models.CharField(max_length=50, help_text="Ej: 'Vecino Juan', 'Padre Roberto'")
+    especialidad = models.CharField(max_length=50, choices=ESPECIALIDADES, default='VECINO')
+    especialidad_otro = models.CharField(max_length=100, blank=True, null=True, help_text="Si eligió Otro")
     telefono = models.CharField(max_length=20, help_text="Para contacto interno, no se muestra al usuario")
     
     # Seguridad
