@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:async'; // Para Timer
 import 'package:geolocator/geolocator.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -27,11 +28,14 @@ class _PantallaChatState extends State<PantallaChat> {
   final ScrollController _scrollController = ScrollController();
   final List<Map<String, dynamic>> _mensajes = [];
   bool _enviando = false;
+  Timer? _timerInactividad;
+  Timer? _pollingTimer;
 
   @override
   void initState() {
     super.initState();
-    // Mensaje de bienvenida inicial
+    // Mensaje de bienvenida inicial (Local)
+    // Se mostrará hasta que cargue el historial real
     _mensajes.add({
       "texto": "Hola ${widget.aliasUsuario}, soy Todavía. Estoy aquí para escucharte. ¿Cómo te sientes hoy?",
       "es_de_la_ia": true,
@@ -40,6 +44,83 @@ class _PantallaChatState extends State<PantallaChat> {
     
     // Solicitar ubicación al iniciar
     _enviarUbicacionActual();
+    
+    // Iniciar timer de inactividad
+    _resetInactivityTimer();
+
+    // Iniciar Polling de Mensajes (Cada 3 segundos)
+    _pollingTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
+      _obtenerMensajesBackend();
+    });
+  }
+
+  @override
+  void dispose() {
+    _timerInactividad?.cancel();
+    _pollingTimer?.cancel();
+    _mensajeController.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _obtenerMensajesBackend() async {
+    try {
+      final url = Uri.parse('${widget.baseUrl}/chat/${widget.usuarioId}/historial/');
+      final response = await http.get(url);
+      
+      if (response.statusCode == 200) {
+        String bodyText = utf8.decode(response.bodyBytes);
+        final data = jsonDecode(bodyText);
+        final historial = data['mensajes'] as List;
+        
+        // Verificamos si hay cambios reales comparando el último mensaje
+        bool hayCambios = false;
+        if (historial.length != _mensajes.length) {
+          hayCambios = true;
+        } else if (historial.isNotEmpty && _mensajes.isNotEmpty) {
+           final ultimoRemoto = historial.last['texto'];
+           final ultimoLocal = _mensajes.last['texto'];
+           if (ultimoRemoto != ultimoLocal) {
+             hayCambios = true;
+           }
+        }
+
+        if (hayCambios && mounted) {
+           setState(() {
+             _mensajes.clear();
+             for (var m in historial) {
+               _mensajes.add({
+                 "texto": m['texto'],
+                 "es_de_la_ia": m['es_de_la_ia'] == true, 
+                 "fecha": DateTime.parse(m['fecha']),
+               });
+             }
+           });
+           _scrollToBottom();
+        }
+      }
+    } catch (e) {
+      // Silencioso
+      print("Error polling: $e");
+    }
+  }
+
+  void _resetInactivityTimer() {
+    _timerInactividad?.cancel();
+    // Si no hay interacción por 45 segundos, enviamos mensaje de apoyo
+    _timerInactividad = Timer(const Duration(seconds: 45), _mostrarMensajeInactividad);
+  }
+
+  void _mostrarMensajeInactividad() {
+    if (!mounted) return;
+    setState(() {
+      _mensajes.add({
+        "texto": "Aquí sigo contigo. Si prefieres hablar con una persona, puedes tocar el icono de las manos arriba 🤝.",
+        "es_de_la_ia": true,
+        "fecha": DateTime.now(),
+      });
+    });
+    _scrollToBottom();
   }
 
   Future<void> _enviarUbicacionActual() async {
@@ -88,6 +169,8 @@ class _PantallaChatState extends State<PantallaChat> {
     final texto = _mensajeController.text.trim();
     if (texto.isEmpty || _enviando) return;
 
+    _resetInactivityTimer(); // Resetear timer al enviar
+
     setState(() {
       _mensajes.add({
         "texto": texto,
@@ -101,38 +184,106 @@ class _PantallaChatState extends State<PantallaChat> {
 
     try {
       final url = Uri.parse('${widget.baseUrl}/chat/${widget.usuarioId}/');
+      print("Enviando a: $url"); // DEBUG
+      
       final respuesta = await http.post(
         url,
-        headers: {"Content-Type": "application/json"},
+        headers: {"Content-Type": "application/json; charset=UTF-8"}, // HEADER IMPORTANTE
         body: jsonEncode({"texto": texto}),
       );
 
+      print("Status Code: ${respuesta.statusCode}"); // DEBUG
+      print("Body Raw: ${respuesta.body}"); // DEBUG
+
       if (respuesta.statusCode == 200) {
-        final data = jsonDecode(respuesta.body);
-        setState(() {
-          _mensajes.add({
-            "texto": data['respuesta'],
-            "es_de_la_ia": true,
-            "fecha": DateTime.now(),
+        // DECODIFICACION UTF8 EXPLICITA PARA EVITAR CARACTERES RAROS
+        String bodyText = utf8.decode(respuesta.bodyBytes); 
+        final data = jsonDecode(bodyText);
+        
+        final String respuestaTexto = data['respuesta'] ?? "";
+        
+        if (respuestaTexto.isNotEmpty) {
+          setState(() {
+            _mensajes.add({
+              "texto": respuestaTexto,
+              "es_de_la_ia": true,
+              "fecha": DateTime.now(),
+            });
           });
-        });
-        _scrollToBottom();
+          _scrollToBottom();
+        } else if (data['modo_humano'] == true) {
+             // Si está en modo humano y no hay texto, es que el humano aún no respondió.
+             // No agregamos burbuja vacía.
+             // Podríamos mostrar un snackbar o indicador.
+             if (mounted) {
+               ScaffoldMessenger.of(context).showSnackBar(
+                 const SnackBar(content: Text("Esperando respuesta del voluntario..."), duration: Duration(seconds: 2))
+               );
+             }
+        }
+        
         if (data['alerta_crisis'] == true) {
           _mostrarOpcionesEmergencia();
         }
       } else {
-        _mostrarError("Error del servidor: ${respuesta.statusCode}");
+        _mostrarError("Error del servidor (${respuesta.statusCode}): ${respuesta.body}");
       }
     } catch (e) {
-      _mostrarError("Error de conexión. Verifica tu internet.");
+      print("Excepcion: $e"); // DEBUG
+      _mostrarError("Error de conexión: $e");
     } finally {
-      setState(() => _enviando = false);
+      if (mounted) setState(() => _enviando = false);
     }
   }
 
   void _mostrarError(String msg) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(msg), backgroundColor: Colors.redAccent),
+    );
+  }
+
+  void _solicitarAliado() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("Conectar con Aliado"),
+        content: const Text("Estamos buscando un voluntario disponible para hablar contigo. Por favor, mantente en línea."),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Cancelar")),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(ctx); // Cerrar diálogo
+              
+              // Mostrar mensaje local provisorio
+              setState(() {
+                _mensajes.add({
+                  "texto": "Solicitando conexión con un aliado humano...",
+                  "es_de_la_ia": true,
+                  "fecha": DateTime.now(),
+                });
+              });
+              _scrollToBottom();
+  
+              // LLAMADA AL BACKEND
+              try {
+                final url = Uri.parse('${widget.baseUrl}/usuario/${widget.usuarioId}/solicitar-aliado/');
+                final response = await http.post(url);
+                
+                // Si el servidor responde (aunque sea "SIN_ALIADOS" o "ASIGNADO"), 
+                // ya habrá creado un mensaje en la DB que veremos al refrescar o en la respuesta.
+                // Aquí solo manejamos errores de red críticos.
+                if (response.statusCode != 200) {
+                   _mostrarError("No pudimos conectar. Intenta de nuevo.");
+                }
+              } catch (e) {
+                _mostrarError("Error de conexión al solicitar aliado.");
+              }
+            }, 
+            child: const Text("Esperar")
+          )
+        ],
+      )
     );
   }
 
@@ -242,6 +393,11 @@ class _PantallaChatState extends State<PantallaChat> {
         centerTitle: true,
         actions: [
           IconButton(
+            tooltip: "Hablar con un Aliado",
+            icon: Icon(Icons.volunteer_activism, color: colorPrimario),
+            onPressed: _solicitarAliado,
+          ),
+          IconButton(
             icon: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
@@ -332,6 +488,7 @@ class _PantallaChatState extends State<PantallaChat> {
                 child: TextField(
                   controller: _mensajeController,
                   style: GoogleFonts.outfit(),
+                  onChanged: (val) => _resetInactivityTimer(), // Reset timer al escribir
                   decoration: InputDecoration(
                     hintText: "Escribe un mensaje...",
                     border: InputBorder.none,

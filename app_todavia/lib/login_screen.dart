@@ -68,7 +68,20 @@ class _LoginScreenState extends State<LoginScreen> {
 
     // Guardar el alias localmente también
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('usuario_alias', _aliasController.text);
+    String? aliasGuardado = prefs.getString('usuario_alias');
+    String aliasActual = _aliasController.text.trim();
+
+    // SI EL NICK ES DIFERENTE, BORRON Y CUENTA NUEVA
+    if (aliasGuardado != null && aliasGuardado != aliasActual) {
+      String nuevoId = const Uuid().v4();
+      await prefs.setString('usuario_id', nuevoId);
+      setState(() {
+        _usuarioId = nuevoId;
+      });
+      debugPrint("Cambio de Nick detectado. Nuevo ID generado: $_usuarioId");
+    }
+
+    await prefs.setString('usuario_alias', aliasActual);
 
     String modelo = "Desconocido";
     String os = Platform.operatingSystem;
@@ -239,6 +252,24 @@ class _LoginScreenState extends State<LoginScreen> {
               children: [
                 Text("Hecho en Tilcara", style: GoogleFonts.outfit(fontSize: 12, color: Colors.grey[600], fontWeight: FontWeight.bold)),
                 Text("© TILCANET", style: GoogleFonts.outfit(fontSize: 10, color: Colors.grey[400])),
+                const SizedBox(height: 5),
+                Text("v1.0.3 Debug", style: GoogleFonts.outfit(fontSize: 10, color: Colors.redAccent)),
+                IconButton(
+                  icon: const Icon(Icons.refresh, size: 15, color: Colors.grey),
+                  tooltip: "Reset ID",
+                  onPressed: () async {
+                    final prefs = await SharedPreferences.getInstance();
+                    await prefs.remove('usuario_id');
+                    await prefs.remove('usuario_alias');
+                   // Recargar app
+                   if (context.mounted) {
+                     Navigator.of(context).pushAndRemoveUntil(
+                       MaterialPageRoute(builder: (c) => const LoginScreen()),
+                       (route) => false
+                     );
+                   }
+                  },
+                )
               ],
             ).animate().fadeIn(delay: 2000.ms),
           ),

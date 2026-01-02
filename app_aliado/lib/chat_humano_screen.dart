@@ -38,7 +38,9 @@ class _ChatHumanoScreenState extends State<ChatHumanoScreen> {
     try {
       final response = await http.get(Uri.parse('$_baseUrl/aliado/chat/${widget.sesionId}/mensajes/'));
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+        // Fix UTF-8
+        String bodyText = utf8.decode(response.bodyBytes);
+        final data = jsonDecode(bodyText);
         final nuevosMensajes = data['mensajes'] as List;
         
         // Solo actualizar si hay cambios
@@ -71,14 +73,24 @@ class _ChatHumanoScreenState extends State<ChatHumanoScreen> {
     _scrollToBottom();
 
     try {
-      await http.post(
+      final response = await http.post(
         Uri.parse('$_baseUrl/aliado/chat/${widget.sesionId}/mensajes/'),
-        headers: {'Content-Type': 'application/json'},
+        headers: {'Content-Type': 'application/json; charset=UTF-8'},
         body: jsonEncode({'texto': texto}),
       );
+      
+      if (response.statusCode != 200) {
+        throw Exception("Error ${response.statusCode}");
+      }
+      
       _fetchMensajes(); // Sync real
     } catch (e) {
       print("Error sending: $e");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error al enviar: $e"), backgroundColor: Colors.red),
+        );
+      }
     }
   }
   

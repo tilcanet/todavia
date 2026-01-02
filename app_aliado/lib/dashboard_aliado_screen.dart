@@ -74,7 +74,9 @@ class _DashboardAliadoScreenState extends State<DashboardAliadoScreen> {
     try {
       final response = await http.get(Uri.parse('$_baseUrl/aliado/$_aliadoId/chats/'));
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+        // Fix UTF-8
+        String bodyText = utf8.decode(response.bodyBytes);
+        final data = jsonDecode(bodyText);
         setState(() {
           _sesiones = data['sesiones'];
         });
