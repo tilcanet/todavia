@@ -678,3 +678,45 @@ def aliado_mis_chats(request, aliado_id):
             
     except Aliado.DoesNotExist:
         return Response({"error": "Aliado no encontrado"}, status=404)
+
+@api_view(['GET', 'POST'])
+def aliado_chat_mensajes(request, sesion_id):
+    """
+    Gestiona los mensajes dentro de una sesión humana.
+    GET: Trae el historial.
+    POST: El Aliado envía un mensaje al Usuario.
+    """
+    from .models import SesionHumana, Mensaje
+    try:
+        sesion = SesionHumana.objects.get(id=sesion_id)
+        
+        # GET: Historial
+        if request.method == 'GET':
+            # Traemos los ultimos 50 mensajes
+            mensajes = Mensaje.objects.filter(usuario=sesion.usuario).order_by('fecha')
+            data = []
+            for m in mensajes:
+                 # En la APP Aliado:
+                 # es_de_la_ia = False -> Es del USUARIO (Izquierda)
+                 # es_de_la_ia = True -> Es MIO o IA (Derecha)
+                data.append({
+                    "texto": m.texto,
+                    "es_de_la_ia": m.es_de_la_ia, 
+                    "fecha": m.fecha
+                })
+            return Response({"mensajes": data})
+
+        # POST: Enviar respuesta
+        elif request.method == 'POST':
+            texto = request.data.get('texto')
+            if not texto: return Response({"error": "Falta texto"}, status=400)
+            
+            Mensaje.objects.create(
+                usuario=sesion.usuario,
+                texto=texto,
+                es_de_la_ia=True 
+            )
+            return Response({"mensaje": "Enviado"})
+
+    except SesionHumana.DoesNotExist:
+        return Response({"error": "Sesión no encontrada"}, status=404)

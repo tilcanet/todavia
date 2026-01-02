@@ -19,4 +19,5 @@ urlpatterns = [
     path('aliado/login/', views.login_aliado, name='login_aliado'),
     path('aliado/<int:aliado_id>/estado/', views.estado_aliado, name='estado_aliado'),
     path('aliado/<int:aliado_id>/chats/', views.aliado_mis_chats, name='aliado_chats'),
+    path('aliado/chat/<int:sesion_id>/mensajes/', views.aliado_chat_mensajes, name='aliado_chat_mensajes'),
 ]
