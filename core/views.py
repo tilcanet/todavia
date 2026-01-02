@@ -236,6 +236,29 @@ def enviar_mensaje(request, usuario_id):
         "alerta_crisis": False
     })
 
+@api_view(['GET'])
+def historico_usuario(request, usuario_id):
+    """
+    Devuelve todo el historial de chat para este usuario.
+    Útil para polling en la app móvil y ver respuestas del Aliado.
+    """
+    try:
+        usuario = UsuarioAnonimo.objects.get(id=usuario_id)
+        # Traemos los ultimos 50 mensajes cronológicos
+        mensajes = usuario.mensajes.all().order_by('fecha')[:50]
+        
+        data = []
+        for m in mensajes:
+            data.append({
+                "texto": m.texto,
+                "es_de_la_ia": m.es_de_la_ia,
+                "fecha": m.fecha.isoformat(),
+                # "id": m.id # Opcional si queremos dedup en el cliente
+            })
+        return Response({"mensajes": data})
+    except UsuarioAnonimo.DoesNotExist:
+         return Response({"error": "Usuario no encontrado"}, status=404)
+
 @api_view(['POST'])
 def solicitar_aliado(request, usuario_id):
     """
