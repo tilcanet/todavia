@@ -237,6 +237,44 @@ def enviar_mensaje(request, usuario_id):
     })
 
 @api_view(['POST'])
+def solicitar_aliado(request, usuario_id):
+    """
+    Endpoint específico para el botón de 'Manitos'.
+    Busca un aliado disponible y crea la sesión.
+    """
+    from .models import Aliado, SesionHumana
+    try:
+        usuario = UsuarioAnonimo.objects.get(id=usuario_id)
+        
+        # 1. Si ya tiene sesión activa, devolvemos OK
+        if SesionHumana.objects.filter(usuario=usuario, activa=True).exists():
+             return Response({"mensaje": "Ya tienes una sesión activa", "estado": "YA_EXISTE"})
+
+        # 2. Buscar aliado
+        aliado_disp = Aliado.objects.filter(esta_disponible=True).first()
+        
+        if aliado_disp:
+             SesionHumana.objects.create(usuario=usuario, aliado=aliado_disp, activa=True)
+             
+             # Mensaje de sistema confirmando
+             msg_sys = f"Conectando con {aliado_disp.nombre_visible}... Te leerá en breve."
+             Mensaje.objects.create(usuario=usuario, texto=msg_sys, es_de_la_ia=True)
+             
+             return Response({
+                 "mensaje": "Aliado asignado", 
+                 "estado": "ASIGNADO",
+                 "aliado_nombre": aliado_disp.nombre_visible
+             })
+        else:
+             # No hay nadie
+             msg_sys = "No hemos encontrado aliados disponibles en este momento. Pero yo (Todavía) sigo aquí para escucharte."
+             Mensaje.objects.create(usuario=usuario, texto=msg_sys, es_de_la_ia=True)
+             return Response({"mensaje": "Sin aliados disponibles", "estado": "SIN_ALIADOS"})
+
+    except UsuarioAnonimo.DoesNotExist:
+        return Response({"error": "Usuario no encontrado"}, status=404)
+
+@api_view(['POST'])
 def actualizar_zona(request, usuario_id):
     try:
         usuario = UsuarioAnonimo.objects.get(id=usuario_id)

@@ -11,6 +11,7 @@ urlpatterns = [
     path('chat/<uuid:usuario_id>/rompehielo/', views.generar_rompehielo, name='rompehielo'),
     path('chat/<uuid:usuario_id>/actualizar-ubicacion/', views.actualizar_ubicacion, name='actualizar_ubicacion'),
     path('usuario/<uuid:usuario_id>/ticket-ayuda/', views.registrar_ticket_ayuda, name='ticket_ayuda'),
+    path('usuario/<uuid:usuario_id>/solicitar-aliado/', views.solicitar_aliado, name='solicitar_aliado'),
     path('reporte-publico/', reports_view.reporte_politicas_publicas, name='reporte_publico'),
     path('dashboard/', views.dashboard_view, name='dashboard'),
     
