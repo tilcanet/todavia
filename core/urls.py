@@ -18,4 +18,5 @@ urlpatterns = [
     path('aliado/registro/', views.registrar_aliado, name='registrar_aliado'),
     path('aliado/login/', views.login_aliado, name='login_aliado'),
     path('aliado/<int:aliado_id>/estado/', views.estado_aliado, name='estado_aliado'),
+    path('aliado/<int:aliado_id>/chats/', views.aliado_mis_chats, name='aliado_chats'),
 ]

@@ -653,3 +653,28 @@ def estado_aliado(request, aliado_id):
         })
     except Aliado.DoesNotExist:
         return Response({"error": "Aliado no encontrado"}, status=404)
+
+@api_view(['GET'])
+def aliado_mis_chats(request, aliado_id):
+    """
+    Devuelve las sesiones activas asignadas a este aliado.
+    """
+    from .models import Aliado, SesionHumana
+    try:
+        aliado = Aliado.objects.get(id=aliado_id)
+        sesiones = SesionHumana.objects.filter(aliado=aliado, activa=True).order_by('-fecha_inicio')
+        
+        data = []
+        for s in sesiones:
+            data.append({
+                "sesion_id": s.id,
+                "usuario_alias": s.usuario.alias,
+                "usuario_zona": s.usuario.zona or "Desconocida",
+                "fecha_inicio": s.fecha_inicio,
+                "mensajes_no_leidos": 0 # TODO: Implementar contador real
+            })
+            
+        return Response({"sesiones": data})
+            
+    except Aliado.DoesNotExist:
+        return Response({"error": "Aliado no encontrado"}, status=404)
