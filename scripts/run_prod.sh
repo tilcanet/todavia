@@ -22,7 +22,7 @@ source venv/bin/activate
 echo "📦 Instalando dependencias..."
 pip install -r requirements.txt
 # Fallback por si requirements.txt no se actualizó bien en el server
-pip install gunicorn psycopg2-binary dj-database-url whitenoise
+pip install gunicorn psycopg2-binary "dj-database-url==2.2.0" whitenoise
 
 # 3. Migraciones de Base de Datos
 echo "🗄️  Aplicando migraciones a la Base de Datos..."
