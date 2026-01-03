@@ -848,4 +848,35 @@ def aliado_toggle_status_web(request):
             return JsonResponse({"estado": aliado.esta_disponible})
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=400)
-    return JsonResponse({}, status=405)
+@login_required
+def aliado_registro_web(request):
+    """
+    Permite a un Aliado existente (o admin) registrar uno nuevo.
+    """
+    if not request.user.is_staff and not hasattr(request.user, 'perfil_aliado'):
+        return  render(request, 'aliado_login.html', {"error": "No tienes permisos"})
+
+    if request.method == 'POST':
+        from django.contrib.auth.models import User
+        from .models import Aliado
+        
+        u = request.POST.get('username')
+        p = request.POST.get('password')
+        n = request.POST.get('nombre')
+        t = request.POST.get('telefono')
+        e = request.POST.get('especialidad')
+        
+        if User.objects.filter(username=u).exists():
+             return render(request, 'aliado_registro.html', {"error": "El usuario ya existe"})
+             
+        user = User.objects.create_user(username=u, password=p)
+        Aliado.objects.create(
+            usuario_real=user,
+            nombre_visible=n,
+            telefono=t,
+            especialidad=e,
+            esta_disponible=True
+        )
+        return redirect('aliado_dashboard_web')
+
+    return render(request, 'aliado_registro.html')

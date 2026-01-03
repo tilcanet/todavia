@@ -26,6 +26,7 @@ urlpatterns = [
     # --- WEB ALIADOS ---
     path('aliado/web/login/', views.aliado_login_web, name='aliado_login_web'),
     path('aliado/web/dashboard/', views.aliado_dashboard_web, name='aliado_dashboard_web'),
+    path('aliado/web/registro/', views.aliado_registro_web, name='aliado_registro_web'),
     path('aliado/web/chat/<int:sesion_id>/', views.aliado_chat_web, name='aliado_chat_web'),
     path('aliado/web/status/', views.aliado_toggle_status_web, name='aliado_toggle_status_web'),
 ]
