@@ -781,3 +781,71 @@ def aliado_chat_mensajes(request, sesion_id):
 
     except SesionHumana.DoesNotExist:
         return Response({"error": "Sesión no encontrada"}, status=404)
+
+# ---------------------------------------------------------
+#                 WEB ALIADOS (INTERFACE PC)
+# ---------------------------------------------------------
+
+def aliado_login_web(request):
+    from django.contrib.auth import authenticate, login
+    from django.shortcuts import redirect
+    
+    if request.method == 'POST':
+        u = request.POST.get('username')
+        p = request.POST.get('password')
+        user = authenticate(request, username=u, password=p)
+        if user is not None:
+             if hasattr(user, 'perfil_aliado'):
+                 login(request, user)
+                 # Auto activar
+                 user.perfil_aliado.esta_disponible = True
+                 user.perfil_aliado.save()
+                 return redirect('aliado_dashboard_web')
+             else:
+                 return render(request, 'aliado_login.html', {"error": "Tu usuario no es Aliado"})
+        else:
+            return render(request, 'aliado_login.html', {"error": "Credenciales inválidas"})
+            
+    return render(request, 'aliado_login.html')
+
+@login_required
+def aliado_dashboard_web(request):
+    try:
+        aliado = request.user.perfil_aliado
+    except:
+        return render(request, 'aliado_login.html', {"error": "No tienes perfil de Aliado"})
+
+    from .models import SesionHumana
+    sesiones = SesionHumana.objects.filter(aliado=aliado, activa=True).order_by('-fecha_inicio')
+    
+    return render(request, 'aliado_dashboard.html', {
+        "aliado": aliado, 
+        "sesiones": sesiones
+    })
+
+@login_required
+def aliado_chat_web(request, sesion_id):
+    from .models import SesionHumana
+    # Validar que sea SU sesión
+    try:
+        aliado = request.user.perfil_aliado
+        sesion = SesionHumana.objects.get(id=sesion_id, aliado=aliado)
+    except:
+        return redirect('aliado_dashboard_web')
+    
+    return render(request, 'aliado_chat.html', {"sesion": sesion})
+
+@login_required
+def aliado_toggle_status_web(request):
+    import json
+    from django.http import JsonResponse
+    if request.method == 'POST':
+        try:
+            body = json.loads(request.body)
+            aliado = request.user.perfil_aliado
+            aliado.esta_disponible = body.get('disponible', False)
+            aliado.save()
+            return JsonResponse({"estado": aliado.esta_disponible})
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=400)
+    return JsonResponse({}, status=405)

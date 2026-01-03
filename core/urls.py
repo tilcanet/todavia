@@ -22,4 +22,10 @@ urlpatterns = [
     path('aliado/<int:aliado_id>/estado/', views.estado_aliado, name='estado_aliado'),
     path('aliado/<int:aliado_id>/chats/', views.aliado_mis_chats, name='aliado_chats'),
     path('aliado/chat/<int:sesion_id>/mensajes/', views.aliado_chat_mensajes, name='aliado_chat_mensajes'),
+    
+    # --- WEB ALIADOS ---
+    path('aliado/web/login/', views.aliado_login_web, name='aliado_login_web'),
+    path('aliado/web/dashboard/', views.aliado_dashboard_web, name='aliado_dashboard_web'),
+    path('aliado/web/chat/<int:sesion_id>/', views.aliado_chat_web, name='aliado_chat_web'),
+    path('aliado/web/status/', views.aliado_toggle_status_web, name='aliado_toggle_status_web'),
 ]

@@ -1,0 +1,158 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid mt-3" style="max-width: 1000px;">
+    <div class="card shadow h-100" style="min-height: 80vh;">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center">
+                <a href="{% url 'aliado_dashboard_web' %}" class="btn btn-sm btn-light me-3"><i
+                        class="fas fa-arrow-left"></i> Volver</a>
+                <div>
+                    <h5 class="mb-0">{{ sesion.usuario.alias }}</h5>
+                    <small class="text-white-50">{{ sesion.usuario.zona|default:"Sin zona" }}</small>
+                </div>
+            </div>
+            <button class="btn btn-sm btn-danger" onclick="cerrarSesion()">Cerrar Chat</button>
+        </div>
+
+        <div class="card-body overflow-auto" id="chatBox" style="height: 60vh; background-color: #f8f9fa;">
+            <!-- Mensajes se cargarán aquí -->
+            <div class="text-center mt-5 text-muted">Cargando historial...</div>
+        </div>
+
+        <div class="card-footer bg-white">
+            <div class="input-group">
+                <input type="text" id="msgInput" class="form-control" placeholder="Escribe un mensaje de apoyo..."
+                    onkeypress="handleEnter(event)">
+                <button class="btn btn-primary" type="button" onclick="enviarMensaje()">
+                    <i class="fas fa-paper-plane"></i> Enviar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .msg-bubble {
+        max-width: 75%;
+        padding: 10px 15px;
+        border-radius: 20px;
+        margin-bottom: 10px;
+        position: relative;
+    }
+
+    .msg-aliado {
+        background-color: #0d6efd;
+        color: white;
+        margin-left: auto;
+        border-bottom-right-radius: 5px;
+    }
+
+    .msg-usuario {
+        background-color: #e9ecef;
+        color: #333;
+        margin-right: auto;
+        border-bottom-left-radius: 5px;
+    }
+
+    .msg-time {
+        font-size: 0.7rem;
+        opacity: 0.7;
+        margin-top: 5px;
+        display: block;
+        text-align: right;
+    }
+</style>
+
+<script>
+    const SESION_ID = {{ sesion.id }};
+    const CHAT_API_URL = "{% url 'aliado_chat_mensajes' sesion.id %}"; // Usamos la API existente
+    const chatBox = document.getElementById('chatBox');
+    let lastMsgCount = 0;
+
+    function formatTime(isoString) {
+        const date = new Date(isoString);
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function renderMessages(mensajes) {
+        // Solo renderizar si hay nuevos (simple check)
+        if (mensajes.length === lastMsgCount) return;
+
+        chatBox.innerHTML = '';
+        mensajes.forEach(msg => {
+            const div = document.createElement('div');
+            // Lógica inversa a la App Movil:
+            // App Movil: es_de_la_ia=True -> Derecha (IA/Aliado).
+            // Web Aliado: es_de_la_ia=True -> Derecha (YO/Aliado).
+            // Web Aliado: es_de_la_ia=False -> Izquierda (Usuario).
+            const isMe = msg.es_de_la_ia;
+
+            div.className = `msg-bubble ${isMe ? 'msg-aliado' : 'msg-usuario'}`;
+            div.innerHTML = `
+                ${msg.texto}
+                <span class="msg-time">${formatTime(msg.fecha)}</span>
+            `;
+            chatBox.appendChild(div);
+        });
+
+        if (mensajes.length > lastMsgCount) {
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+        lastMsgCount = mensajes.length;
+    }
+
+    function cargarMensajes() {
+        fetch(CHAT_API_URL)
+            .then(res => res.json())
+            .then(data => {
+                if (data.mensajes) {
+                    renderMessages(data.mensajes);
+                }
+            })
+            .catch(err => console.error("Error cargando chat:", err));
+    }
+
+    function enviarMensaje() {
+        const input = document.getElementById('msgInput');
+        const texto = input.value.trim();
+        if (!texto) return;
+
+        fetch(CHAT_API_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                // 'X-CSRFToken': '{{ csrf_token }}' // La API usa @api_view, a veces ignora CSRF o requiere token Auth. 
+                // Como esta vista es API, quizas necesitemos ajustar para que acepte cookie session o enviar csrf.
+                // Intentaremos enviar CSRF por si acaso.
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({ texto: texto })
+        })
+            .then(res => {
+                if (res.ok) {
+                    input.value = '';
+                    cargarMensajes(); // Recarga inmediata
+                } else {
+                    alert("Error al enviar mensaje");
+                }
+            });
+    }
+
+    function handleEnter(e) {
+        if (e.key === 'Enter') enviarMensaje();
+    }
+
+    function cerrarSesion() {
+        if (confirm("¿Seguro que quieres finalizar esta conversación?")) {
+            // Aquí podríamos llamar a un endpoint para cerrar la sesión
+            window.location.href = "{% url 'aliado_dashboard_web' %}";
+        }
+    }
+
+    // Polling cada 3 segundos
+    cargarMensajes();
+    setInterval(cargarMensajes, 3000);
+
+</script>
+{% endblock %}
