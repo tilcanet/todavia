@@ -32,9 +32,9 @@ python manage.py migrate
 echo "🎨 Recopilando archivos estáticos..."
 python manage.py collectstatic --noinput
 
-# 5. Liberar puerto 8000 (Si quedó colgado)
-echo "🧹 Verificando puerto 8000..."
-fuser -k 8000/tcp || true
+# 5. Liberar puerto 8000 (Usando script Python robusto con ss)
+python scripts/free_port.py
+
 
 # 6. Lanzar Gunicorn
 echo "🔥 Arrancando servidor Gunicorn..."
