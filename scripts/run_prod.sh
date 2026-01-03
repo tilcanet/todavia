@@ -19,8 +19,10 @@ echo "🔌 Activando entorno virtual..."
 source venv/bin/activate
 
 # 2. Instalar dependencias
-echo "📦 Instalando dependencias desde requirements.txt..."
+echo "📦 Instalando dependencias..."
 pip install -r requirements.txt
+# Fallback por si requirements.txt no se actualizó bien en el server
+pip install gunicorn psycopg2-binary dj-database-url whitenoise
 
 # 3. Migraciones de Base de Datos
 echo "🗄️  Aplicando migraciones a la Base de Datos..."
@@ -30,9 +32,9 @@ python manage.py migrate
 echo "🎨 Recopilando archivos estáticos..."
 python manage.py collectstatic --noinput
 
-# 5. Crear usuario admin si no existe (Opcional, manual es mejor en prod)
-# echo "👤 (Opcional) Creando superusuario..."
-# python manage.py createsuperuser --noinput --username admin --email admin@example.com || true
+# 5. Liberar puerto 8000 (Si quedó colgado)
+echo "🧹 Verificando puerto 8000..."
+fuser -k 8000/tcp || true
 
 # 6. Lanzar Gunicorn
 echo "🔥 Arrancando servidor Gunicorn..."
