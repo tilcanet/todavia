@@ -5,9 +5,8 @@ from . import views, reports_view
 urlpatterns = [
     path('', views.home_view, name='home'),
     path('registrar/', views.registrar_usuario, name='registrar'),
-    path('chat/<uuid:usuario_id>/', views.enviar_mensaje, name='chat'),
     path('usuario/<uuid:usuario_id>/zona/', views.actualizar_zona, name='actualizar_zona'),
-    path('chat/<uuid:usuario_id>/', views.enviar_mensaje, name='enviar_mensaje'), # Changed name from 'chat' to 'enviar_mensaje'
+    path('chat/<uuid:usuario_id>/', views.enviar_mensaje, name='enviar_mensaje'),
     path('chat/<uuid:usuario_id>/historial/', views.historico_usuario, name='historico_usuario'),
     path('usuario/<uuid:usuario_id>/alias/', views.actualizar_alias, name='actualizar_alias'),
     path('chat/<uuid:usuario_id>/rompehielo/', views.generar_rompehielo, name='rompehielo'),
