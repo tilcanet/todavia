@@ -27,6 +27,8 @@ urlpatterns = [
     path('aliado/web/login/', views.aliado_login_web, name='aliado_login_web'),
     path('aliado/web/dashboard/', views.aliado_dashboard_web, name='aliado_dashboard_web'),
     path('aliado/web/registro/', views.aliado_registro_web, name='aliado_registro_web'),
+    path('aliado/web/signup/', views.aliado_signup_web, name='aliado_signup_web'), 
+    path('aliado/web/approve/<int:aliado_id>/', views.aliado_approve_web, name='aliado_approve_web'),
     path('aliado/web/chat/<int:sesion_id>/', views.aliado_chat_web, name='aliado_chat_web'),
     path('aliado/web/status/', views.aliado_toggle_status_web, name='aliado_toggle_status_web'),
 ]

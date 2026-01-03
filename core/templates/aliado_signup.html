@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-lg border-0 rounded-lg">
+                <div class="card-header bg-primary text-white text-center py-3">
+                    <h3 class="mb-0 font-weight-light">Solicitud de Aliado</h3>
+                </div>
+                <div class="card-body">
+                    {% if error %}
+                    <div class="alert alert-danger" role="alert">
+                        {{ error }}
+                    </div>
+                    {% endif %}
+                    {% if success %}
+                    <div class="alert alert-success" role="alert">
+                        {{ success }}
+                    </div>
+                    <div class="text-center mt-3">
+                        <a href="{% url 'aliado_login_web' %}" class="btn btn-primary">Volver al Login</a>
+                    </div>
+                    {% else %}
+                    <p class="text-muted small mb-4 text-center">
+                        Regístrate para colaborar como Aliado. Tu cuenta deberá ser verificada por un administrador
+                        antes de poder acceder.
+                    </p>
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="form-floating mb-3">
+                            <input class="form-control" id="inputUsername" name="username" type="text"
+                                placeholder="Usuario" required />
+                            <label for="inputUsername">Usuario (DNI o email)</label>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <input class="form-control" id="inputNombre" name="nombre" type="text"
+                                placeholder="Nombre Visible" required />
+                            <label for="inputNombre">Nombre Visible</label>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <select class="form-select" id="inputEspecialidad" name="especialidad">
+                                <option value="VECINO">Vecino Voluntario</option>
+                                <option value="TRABAJOR_SOCIAL">Trabajador Social</option>
+                                <option value="PSICOLOGO">Psicólogo</option>
+                                <option value="ENFERMERO">Enfermero</option>
+                                <option value="RELIGIOSO">Religioso</option>
+                            </select>
+                            <label for="inputEspecialidad">Rol / Especialidad</label>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <input class="form-control" id="inputPassword" name="password" type="password"
+                                placeholder="Contraseña" required />
+                            <label for="inputPassword">Contraseña</label>
+                        </div>
+                        <div class="d-grid gap-2 mt-4 mb-0">
+                            <button class="btn btn-primary btn-lg" type="submit">Enviar Solicitud</button>
+                        </div>
+                    </form>
+                    {% endif %}
+                </div>
+                <div class="card-footer text-center py-3">
+                    <div class="small"><a href="{% url 'aliado_login_web' %}">¿Ya tienes cuenta? Ingresa aquí</a></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

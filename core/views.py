@@ -786,6 +786,37 @@ def aliado_chat_mensajes(request, sesion_id):
 #                 WEB ALIADOS (INTERFACE PC)
 # ---------------------------------------------------------
 
+def aliado_signup_web(request):
+    """
+    Registro público de nuevos aliados. Quedan pendientes de aprobación.
+    """
+    if request.method == 'POST':
+        from django.contrib.auth.models import User
+        from .models import Aliado
+        
+        u = request.POST.get('username')
+        p = request.POST.get('password')
+        n = request.POST.get('nombre')
+        e = request.POST.get('especialidad')
+        
+        if User.objects.filter(username=u).exists():
+             return render(request, 'aliado_signup.html', {"error": "El usuario ya existe"})
+             
+        user = User.objects.create_user(username=u, password=p)
+        # Se crea con es_verificado=False por defecto en el modelo? No, default es False.
+        # esta_disponible=False hasta que lo aprueben.
+        Aliado.objects.create(
+            usuario_real=user,
+            nombre_visible=n,
+            especialidad=e,
+            es_verificado=False,
+            esta_disponible=False
+        )
+        return render(request, 'aliado_signup.html', {"success": "¡Solicitud enviada! Un administrador revisará tu cuenta pronto."})
+
+    return render(request, 'aliado_signup.html')
+
+
 def aliado_login_web(request):
     from django.contrib.auth import authenticate, login
     from django.shortcuts import redirect
@@ -796,6 +827,10 @@ def aliado_login_web(request):
         user = authenticate(request, username=u, password=p)
         if user is not None:
              if hasattr(user, 'perfil_aliado'):
+                 # Verificar si está aprobado
+                 if not user.perfil_aliado.es_verificado:
+                     return render(request, 'aliado_login.html', {"error": "Tu cuenta aún está pendiente de aprobación."})
+
                  login(request, user)
                  # Auto activar
                  user.perfil_aliado.esta_disponible = True
@@ -815,12 +850,18 @@ def aliado_dashboard_web(request):
     except:
         return render(request, 'aliado_login.html', {"error": "No tienes perfil de Aliado"})
 
-    from .models import SesionHumana
+    from .models import SesionHumana, Aliado
     sesiones = SesionHumana.objects.filter(aliado=aliado, activa=True).order_by('-fecha_inicio')
     
+    # Si es staff o admin, puede ver solicitudes pendientes
+    pendientes = []
+    if request.user.is_staff or aliado.es_verificado:
+         pendientes = Aliado.objects.filter(es_verificado=False)
+
     return render(request, 'aliado_dashboard.html', {
         "aliado": aliado, 
-        "sesiones": sesiones
+        "sesiones": sesiones,
+        "pendientes": pendientes
     })
 
 @login_required
@@ -880,3 +921,37 @@ def aliado_registro_web(request):
         return redirect('aliado_dashboard_web')
 
     return render(request, 'aliado_registro.html')
+
+@login_required
+def aliado_approve_web(request, aliado_id):
+    from .models import Aliado
+    from django.core.mail import send_mail
+    from django.conf import settings
+    
+    # Solo staff o verificados pueden aprobar
+    if not request.user.perfil_aliado.es_verificado:
+        return redirect('aliado_dashboard_web')
+
+    try:
+        aliado_target = Aliado.objects.get(id=aliado_id)
+        aliado_target.es_verificado = True
+        aliado_target.save()
+        
+        # Enviar Email
+        if aliado_target.usuario_real.email or '@' in aliado_target.usuario_real.username:
+            destinatario = aliado_target.usuario_real.email if aliado_target.usuario_real.email else aliado_target.usuario_real.username
+            try:
+                send_mail(
+                    '¡Bienvenido a Todavía!',
+                    f'Hola {aliado_target.nombre_visible},\n\nTu cuenta ha sido aprobada. Ya puedes ingresar al panel de aliados: https://todavia.tilcanet.com.ar/aliado/web/login/',
+                    settings.DEFAULT_FROM_EMAIL,
+                    [destinatario],
+                    fail_silently=True,
+                )
+            except:
+                pass # No fallar si el mail falla config
+                
+    except Aliado.DoesNotExist:
+        pass
+        
+    return redirect('aliado_dashboard_web')

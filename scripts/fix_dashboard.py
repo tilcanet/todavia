@@ -1,12 +1,12 @@
-{% extends 'base.html' %}
+
+content = """{% extends 'base.html' %}
 
 {% block content %}
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>Hola, {{ aliado.nombre_visible }}</h2>
         <div class="form-check form-switch">
-            <input class="form-check-input" type="checkbox" id="switchDisponibilidad" {% if aliado.esta_disponible
-                %}checked{% endif %}>
+            <input class="form-check-input" type="checkbox" id="switchDisponibilidad" {% if aliado.esta_disponible %}checked{% endif %}>
             <label class="form-check-label" for="switchDisponibilidad">Disponible para chats</label>
         </div>
     </div>
@@ -18,29 +18,6 @@
             </a>
         </div>
         <div class="col-md-12">
-            {% if pendientes %}
-            <div class="card shadow-sm mb-4 border-warning">
-                <div class="card-header bg-warning text-dark">
-                    <h5 class="mb-0">Solicitudes Pendientes</h5>
-                </div>
-                <div class="list-group list-group-flush">
-                    {% for p in pendientes %}
-                    <div class="list-group-item d-flex justify-content-between align-items-center">
-                        <div>
-                            <strong>{{ p.nombre_visible }}</strong>
-                            <small class="text-muted">({{ p.get_especialidad_display }})</small>
-                            <br>
-                            <small class="text-muted">User: {{ p.usuario_real.username }}</small>
-                        </div>
-                        <a href="{% url 'aliado_approve_web' p.id %}" class="btn btn-sm btn-success">
-                            <i class="fas fa-check"></i> Aprobar
-                        </a>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-            {% endif %}
-
             <div class="card shadow-sm">
                 <div class="card-header bg-info text-white">
                     <h5 class="mb-0">Chats Activos</h5>
@@ -97,3 +74,10 @@
     }, 15000);
 </script>
 {% endblock %}
+"""
+
+import os
+file_path = os.path.join("core", "templates", "aliado_dashboard.html")
+with open(file_path, "w", encoding="utf-8") as f:
+    f.write(content)
+print("File rewritten successfully.")
