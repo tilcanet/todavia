@@ -3,6 +3,10 @@
 # run_prod.sh
 # Script de inicio rápido para producción (Ubuntu/Debian)
 
+# Asegurarnos de estar en la raíz del proyecto (un nivel arriba de scripts/)
+cd "$(dirname "$0")/.."
+echo "📍 Directorio de trabajo: $(pwd)"
+
 echo "🚀 Iniciando despliegue de Todavía..."
 
 # 1. Verificar entorno virtual
