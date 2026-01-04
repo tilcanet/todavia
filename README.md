@@ -47,7 +47,7 @@ Cristian Alberto Perez
 📍 Tilcara – Jujuy – Argentina
 🌐 Tilcanet
 
-📞 Teléfono / WhatsApp: 388455391
+📞 Teléfono / WhatsApp: 3884553691
 📧 Email: tilcaracristian@gmail.com
 
 ✨ Nota final
