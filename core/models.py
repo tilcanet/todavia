@@ -1,4 +1,13 @@
 # core/models.py
+"""
+PROYECTO TODAVÍA
+----------------
+Desarrollado por: TILCANET y COMUNIDAD INDÍGENA PUKARA
+Autor Principal: Cristian Alberto Perez
+Propósito: Sistema de asistencia comunitaria y contención digital.
+"Hecho con el corazón para ayudar a nuestra gente."
+"""
+
 from django.db import models
 import uuid  # Librería para generar IDs únicos y aleatorios
 from django.contrib.auth.models import User # <--- IMPORTANTE: Agrega esto arriba

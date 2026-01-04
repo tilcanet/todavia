@@ -3,6 +3,14 @@ import os
 import re
 import json # <--- AGREGADO
 from django.utils import timezone # <--- AGREGADO
+"""
+PROYECTO TODAVÍA
+----------------
+Desarrollado por: TILCANET y COMUNIDAD INDÍGENA PUKARA
+Autor Principal: Cristian Alberto Perez
+Propósito: Lógica de negocio, chat IA, y gestión de aliados.
+"""
+
 from django.shortcuts import render # <--- AGREGADO
 from django.conf import settings
 from rest_framework.decorators import api_view
